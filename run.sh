@@ -1,0 +1,1 @@
+docker run -d -p $1:8000 --env-file .env --name express-starter express-starter
