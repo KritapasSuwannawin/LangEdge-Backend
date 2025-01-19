@@ -1,11 +1,11 @@
 import express from 'express';
 
-import adminController from '../controller/adminController';
+import userController from '../controller/userController';
 
 import { checkAuthToken } from '../middleware/auth';
 
 const router = express.Router();
 
-router.route('/count').get(checkAuthToken, adminController.getCount);
+router.route('/translation').get(checkAuthToken, userController.getTranslation);
 
 export default router;

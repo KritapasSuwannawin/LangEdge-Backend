@@ -1,1 +1,1 @@
-docker build -t express-starter .
+docker build -t langedge-backend .

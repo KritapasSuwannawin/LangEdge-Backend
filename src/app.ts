@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 
 import authRouter from './route/authRoute';
-import adminRouter from './route/adminRoute';
+import userRouter from './route/userRoute';
 
 const app = express();
 
@@ -12,6 +12,6 @@ app.use(cors({ credentials: true }));
 app.use(express.json());
 
 app.use('/api/auth', authRouter);
-app.use('/api/admin', adminRouter);
+app.use('/api/user', userRouter);
 
 export default app;
