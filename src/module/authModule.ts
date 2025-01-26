@@ -4,7 +4,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { logError } from './systemModule';
 
 export const generateToken = (payload: JwtPayload): string => {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '1d' });
+  return jwt.sign(payload, process.env.JWT_SECRET_KEY!, { expiresIn: '1d' });
 };
 
 export const extractToken = (req: Request): string | null => {
@@ -21,7 +21,7 @@ export const extractToken = (req: Request): string | null => {
 
 export const decodeToken = (token: string): JwtPayload | null => {
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!);
+    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY!);
 
     if (typeof payload === 'string') {
       throw new Error('Invalid token');

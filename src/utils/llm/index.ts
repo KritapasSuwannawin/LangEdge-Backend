@@ -4,12 +4,12 @@ import { logError } from '../../module/systemModule';
 
 import GPT4oMini from './model/gpt4oMini';
 
-export const translateText = async (text: string): Promise<string | null> => {
+export const translateText = async (text: string, inputLanguage: string, outputLanguage: string): Promise<string | null> => {
   try {
     const llmOutput = await new GPT4oMini().call(
-      `You are given a text in English.
+      `You are given a text in ${inputLanguage}.
 
-Your task is to translate this text into Thai.
+Your task is to translate this text into ${outputLanguage}.
 
 Text:
 --- (start of text) ---
