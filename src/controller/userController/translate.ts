@@ -5,51 +5,45 @@ import { getLanguage } from '../../model/languageModel';
 import { translateText } from '../../utils/llm';
 
 const getTranslation = async (req: Request, res: Response) => {
-  const {
-    text,
-    inputLanguageId: inputLanguageIdString,
-    outputOutputLanguageId: outputOutputLanguageIdString,
-  } = req.query as {
+  const { text, outputOutputLanguageId: outputOutputLanguageIdString } = req.query as {
     text?: string;
-    inputLanguageId?: string;
     outputOutputLanguageId?: string;
   };
 
   const trimmedText = text?.trim();
 
-  if (!trimmedText || !inputLanguageIdString || !outputOutputLanguageIdString) {
+  if (!trimmedText || trimmedText.length > 100 || !outputOutputLanguageIdString) {
     res.status(400).json({ message: 'Invalid input' });
     return;
   }
 
-  const inputLanguageId = parseInt(inputLanguageIdString, 10);
   const outputLanguageId = parseInt(outputOutputLanguageIdString, 10);
 
-  if (isNaN(inputLanguageId) || isNaN(outputLanguageId)) {
+  if (isNaN(outputLanguageId)) {
     res.status(400).json({ message: 'Invalid input' });
     return;
   }
 
-  const [inputLanguage, outputLanguage] = (
-    await Promise.all([getLanguage(inputLanguageId, ['name']), getLanguage(outputLanguageId, ['name'])])
-  ).map((language) => language[0]);
+  const outputLanguage = (await getLanguage(outputLanguageId, ['name']))[0];
 
-  if (!inputLanguage || !outputLanguage) {
+  if (!outputLanguage) {
     res.status(400).json({ message: 'Invalid input' });
     return;
   }
 
-  const inputLanguageName = inputLanguage.name as string;
-  const outputLanguageName = outputLanguage.name as string;
+  const translationOutput = await translateText(trimmedText, outputLanguage.name as string);
 
-  const translation = await translateText(trimmedText, inputLanguageName, outputLanguageName);
-
-  if (!translation) {
+  if (!translationOutput) {
     res.status(500).json({ message: 'Failed to translate' });
     return;
   }
 
-  res.status(200).json({ data: { translation } });
+  if ('errorMessage' in translationOutput) {
+    res.status(400).json({ message: translationOutput.errorMessage });
+    return;
+  }
+
+  res.status(200).json({ data: translationOutput });
 };
 
 export default { getTranslation };

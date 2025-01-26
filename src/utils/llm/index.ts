@@ -4,23 +4,40 @@ import { logError } from '../../module/systemModule';
 
 import GPT4oMini from './model/gpt4oMini';
 
-export const translateText = async (text: string, inputLanguage: string, outputLanguage: string): Promise<string | null> => {
+export const translateText = async (
+  text: string,
+  outputLanguage: string
+): Promise<{ originalLanguage: string; translation: string } | { errorMessage: string } | null> => {
   try {
     const llmOutput = await new GPT4oMini().call(
-      `You are given a text in ${inputLanguage}.
+      `You are a highly skilled language translator.
 
-Your task is to translate this text into ${outputLanguage}.
+Your task is to process the given input text and produce a JSON response.
 
-Text:
+Processing instructions:
+1. Determine the language of the input text.
+2. Translate the text into ${outputLanguage}.
+
+Output requirements:
+- If the input is valid and translatable: output { "originalLanguage": "...", "translation": "..." }
+- If the input is one of the edge cases below, output only: { "errorMessage": "..." }
+
+Edge cases:
+1. If the input text is invalid (e.g., non-understandable, non-textual content, or not translatable), set errorMessage to "Invalid input".
+2. If the detected language of the input is the same as the target language (${outputLanguage}), set errorMessage to "Same language".
+
+Input text:
 --- (start of text) ---
 ${text}
---- (end of text) ---
-
-Output your response in JSON format only, following these rules:
-1. If a translation can be generated, output: { "translation" : "..." }.
-2. If no translation can be generated, output: { "translation" : "no translation" }.`,
+--- (end of text) ---`,
       z.object({
-        translation: z.string().describe('The translated text'),
+        output: z.union([
+          z.object({
+            originalLanguage: z.string().describe('The language of the input text'),
+            translation: z.string().describe('The translated text'),
+          }),
+          z.object({ errorMessage: z.enum(['Invalid input', 'Same language']).describe('The error message based on edge cases') }),
+        ]),
       })
     );
 
@@ -28,13 +45,7 @@ Output your response in JSON format only, following these rules:
       throw new Error('llmOutput is empty');
     }
 
-    const { translation } = llmOutput as { translation: string };
-
-    if (translation.toLowerCase().includes('no translation')) {
-      return null;
-    }
-
-    return translation;
+    return llmOutput.output as { originalLanguage: string; translation: string } | { errorMessage: string };
   } catch (err) {
     logError('translateText', err);
     return null;
