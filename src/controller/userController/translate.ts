@@ -4,7 +4,7 @@ import { getLanguage } from '../../model/languageModel';
 
 import { parseQuery, logError } from '../../module/systemModule';
 
-import { translateText } from '../../utils/llm';
+import { determineLanguageAndCategory, translateTextAndGenerateSynonyms, generateSynonyms } from '../../utils/llm';
 
 const getTranslation = async (req: Request, res: Response) => {
   const { text, outputLanguageId } = parseQuery(req.query as Record<string, string | undefined>);
@@ -15,6 +15,7 @@ const getTranslation = async (req: Request, res: Response) => {
   }
 
   try {
+    // Get the output language name
     const outputLanguage = (await getLanguage(outputLanguageId, ['name']))[0];
 
     if (!outputLanguage) {
@@ -22,18 +23,42 @@ const getTranslation = async (req: Request, res: Response) => {
       return;
     }
 
-    const translationOutput = await translateText(text, outputLanguage.name as string);
+    const outputLanguageName = outputLanguage.name as string;
 
-    if (!translationOutput) {
-      throw new Error('Failed to translate');
+    // Determine the language and category of the input text
+    const languageAndCategory = await determineLanguageAndCategory(text);
+
+    if (!languageAndCategory) {
+      throw new Error('Failed to determine language and category');
     }
 
-    if ('errorMessage' in translationOutput) {
-      res.status(400).json({ message: translationOutput.errorMessage });
+    if ('errorMessage' in languageAndCategory) {
+      res.status(400).json({ message: languageAndCategory.errorMessage });
       return;
     }
 
-    res.status(200).json({ data: translationOutput });
+    const { language: originalLanguage, category } = languageAndCategory;
+    const isGenerateSynonyms = category === 'Word' || category === 'Phrase';
+
+    // Input text is already in the output language -> Return the input text as the translation
+    if (originalLanguage.toLowerCase() === outputLanguageName.toLowerCase()) {
+      res.status(200).json({ data: { translation: text } });
+      return;
+    }
+
+    // Translate the input text and generate synonyms for both the input text and the translation
+    const [translatedTextAndSynonyms, inputTextSynonymArr] = await Promise.all([
+      translateTextAndGenerateSynonyms(text, isGenerateSynonyms, originalLanguage, outputLanguageName),
+      isGenerateSynonyms ? generateSynonyms(text, originalLanguage) : ([] as string[]),
+    ]);
+
+    if (!translatedTextAndSynonyms || !inputTextSynonymArr) {
+      throw new Error('Failed to translate text and generate synonyms');
+    }
+
+    const { translation, synonyms: translationSynonymArr } = translatedTextAndSynonyms;
+
+    res.status(200).json({ data: { originalLanguage, inputTextSynonymArr, translation, translationSynonymArr } });
   } catch (err) {
     logError('getTranslation', err);
     res.status(500).json({ message: 'Internal server error' });
