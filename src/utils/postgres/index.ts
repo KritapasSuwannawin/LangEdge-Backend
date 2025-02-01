@@ -5,5 +5,9 @@ const pool = new Pool({
 });
 
 export const queryDatabase = async (query: string, values?: unknown[]) => {
+  if (!query.endsWith(';')) {
+    query += ';';
+  }
+
   return await pool.query(query, values);
 };

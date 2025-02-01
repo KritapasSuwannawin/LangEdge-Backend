@@ -45,6 +45,8 @@ ${text}
       throw new Error('llmOutput is empty');
     }
 
+    console.log('translateText:', llmOutput);
+
     return llmOutput.output as { originalLanguage: string; translation: string } | { errorMessage: string };
   } catch (err) {
     logError('translateText', err);

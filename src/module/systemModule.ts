@@ -1,22 +1,45 @@
-export const convertQueryFieldToObject = (queryField: string | undefined): boolean | number | string | undefined => {
-  if (queryField === undefined) {
+export const parseQueryValue = (queryValue: string | undefined): undefined | boolean | number | string => {
+  // undefined
+  if (queryValue === undefined) {
     return undefined;
   }
 
-  if (queryField === 'true') {
+  const trimmedQueryValue = queryValue.trim();
+
+  // empty string -> undefined
+  if (!trimmedQueryValue) {
+    return undefined;
+  }
+
+  // boolean
+  if (trimmedQueryValue.toLowerCase() === 'true') {
     return true;
   }
 
-  if (queryField === 'false') {
+  // boolean
+  if (trimmedQueryValue.toLowerCase() === 'false') {
     return false;
   }
 
-  // check if queryField contains only numbers
-  if (/^\d+$/.test(queryField)) {
-    return Number(queryField);
+  const numberedQueryValue = Number(trimmedQueryValue);
+
+  // !NaN -> number
+  if (!Number.isNaN(numberedQueryValue)) {
+    return numberedQueryValue;
   }
 
-  return queryField;
+  // string
+  return trimmedQueryValue;
+};
+
+export const parseQuery = (query: Record<string, string | undefined>): Record<string, undefined | boolean | number | string> => {
+  const parsedQuery: Record<string, undefined | boolean | number | string> = {};
+
+  for (const [key, value] of Object.entries(query)) {
+    parsedQuery[key] = parseQueryValue(value);
+  }
+
+  return parsedQuery;
 };
 
 export const isDefined = (value: unknown, isAllowNull = true): boolean => {

@@ -2,48 +2,42 @@ import { Request, Response } from 'express';
 
 import { getLanguage } from '../../model/languageModel';
 
+import { parseQuery, logError } from '../../module/systemModule';
+
 import { translateText } from '../../utils/llm';
 
 const getTranslation = async (req: Request, res: Response) => {
-  const { text, outputOutputLanguageId: outputOutputLanguageIdString } = req.query as {
-    text?: string;
-    outputOutputLanguageId?: string;
-  };
+  const { text, outputLanguageId } = parseQuery(req.query as Record<string, string | undefined>);
 
-  const trimmedText = text?.trim();
-
-  if (!trimmedText || trimmedText.length > 100 || !outputOutputLanguageIdString) {
-    res.status(400).json({ message: 'Invalid input' });
+  if (typeof text !== 'string' || typeof outputLanguageId !== 'number' || text.length > 100) {
+    res.status(400).json({ message: 'Bad request' });
     return;
   }
 
-  const outputLanguageId = parseInt(outputOutputLanguageIdString, 10);
+  try {
+    const outputLanguage = (await getLanguage(outputLanguageId, ['name']))[0];
 
-  if (isNaN(outputLanguageId)) {
-    res.status(400).json({ message: 'Invalid input' });
-    return;
+    if (!outputLanguage) {
+      res.status(400).json({ message: 'Bad request' });
+      return;
+    }
+
+    const translationOutput = await translateText(text, outputLanguage.name as string);
+
+    if (!translationOutput) {
+      throw new Error('Failed to translate');
+    }
+
+    if ('errorMessage' in translationOutput) {
+      res.status(400).json({ message: translationOutput.errorMessage });
+      return;
+    }
+
+    res.status(200).json({ data: translationOutput });
+  } catch (err) {
+    logError('getTranslation', err);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const outputLanguage = (await getLanguage(outputLanguageId, ['name']))[0];
-
-  if (!outputLanguage) {
-    res.status(400).json({ message: 'Invalid input' });
-    return;
-  }
-
-  const translationOutput = await translateText(trimmedText, outputLanguage.name as string);
-
-  if (!translationOutput) {
-    res.status(500).json({ message: 'Failed to translate' });
-    return;
-  }
-
-  if ('errorMessage' in translationOutput) {
-    res.status(400).json({ message: translationOutput.errorMessage });
-    return;
-  }
-
-  res.status(200).json({ data: translationOutput });
 };
 
 export default { getTranslation };
