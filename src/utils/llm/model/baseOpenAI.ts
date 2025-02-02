@@ -9,7 +9,7 @@ export default class BaseOpenAI implements Model {
   outputCost: number;
 
   constructor(model: string, inputCost: number, outputCost: number) {
-    this.llm = new ChatOpenAI({ model, temperature: 1, maxTokens: -1, streaming: true, cache: false });
+    this.llm = new ChatOpenAI({ model, temperature: 0.5, maxTokens: -1, streaming: true, cache: false });
 
     this.inputCost = inputCost;
     this.outputCost = outputCost;

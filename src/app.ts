@@ -15,7 +15,16 @@ app.use(cors({ credentials: true }));
 app.use(express.json());
 
 // Log request
-app.use(morgan('tiny', { skip: (_req, res) => res.statusCode === 404 }));
+app.use(
+  morgan('tiny', {
+    skip: (_req, res) => res.statusCode === 404,
+    stream: {
+      write: (message) => {
+        console.log(decodeURIComponent(message.trim()));
+      },
+    },
+  })
+);
 
 // Validate request query
 app.use(validateRequestQuery);
