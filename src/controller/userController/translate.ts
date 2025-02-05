@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import zod from 'zod';
 
 import { getLanguage } from '../../model/languageModel';
 
@@ -12,12 +13,21 @@ import {
 } from '../../utils/llm';
 
 const getTranslation = async (req: Request, res: Response) => {
-  const { text, outputLanguageId } = parseQuery(req.query as Record<string, string | undefined>);
+  const parsedQuery = parseQuery(req.query as Record<string, string>);
 
-  if (typeof text !== 'string' || typeof outputLanguageId !== 'number' || text.length > 400) {
+  const querySchema = zod.object({
+    text: zod.string().max(400),
+    outputLanguageId: zod.number().int().positive(),
+  });
+
+  const { success, data } = querySchema.safeParse(parsedQuery);
+
+  if (!success) {
     res.status(400).json({ message: 'Bad request' });
     return;
   }
+
+  const { text, outputLanguageId } = data;
 
   try {
     // Get the output language name

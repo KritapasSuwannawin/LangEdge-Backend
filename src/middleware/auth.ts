@@ -1,16 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
+import zod from 'zod';
 
 import { extractToken, decodeToken } from '../module/authModule';
 
 export const checkAuthToken = (req: Request, res: Response, next: NextFunction) => {
   const token = extractToken(req);
 
-  if (!token) {
+  const tokenSchema = zod.string().nonempty();
+  const { success, data } = tokenSchema.safeParse(token);
+
+  if (!success) {
     res.status(401).end();
     return;
   }
 
-  const decodedData = decodeToken(token);
+  const decodedData = decodeToken(data);
 
   if (!decodedData) {
     res.status(403).end();

@@ -1,9 +1,4 @@
-export const parseQueryValue = (queryValue: string | undefined): undefined | boolean | number | string => {
-  // undefined
-  if (queryValue === undefined) {
-    return undefined;
-  }
-
+export const parseQueryValue = (queryValue: string): undefined | boolean | number | string => {
   const trimmedQueryValue = queryValue.trim();
 
   // empty string -> undefined
@@ -32,7 +27,7 @@ export const parseQueryValue = (queryValue: string | undefined): undefined | boo
   return trimmedQueryValue;
 };
 
-export const parseQuery = (query: Record<string, string | undefined>): Record<string, undefined | boolean | number | string> => {
+export const parseQuery = (query: Record<string, string>): Record<string, undefined | boolean | number | string> => {
   const parsedQuery: Record<string, undefined | boolean | number | string> = {};
 
   for (const [key, value] of Object.entries(query)) {

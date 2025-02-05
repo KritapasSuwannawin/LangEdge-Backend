@@ -1,16 +1,22 @@
 import { Request, Response } from 'express';
+import zod from 'zod';
 
 import languageModel from '../../model/languageModel';
 
 import { parseQuery, logError } from '../../module/systemModule';
 
 const getLanguage = async (req: Request, res: Response) => {
-  const { id } = parseQuery(req.query as Record<string, string | undefined>);
+  const parsedQuery = parseQuery(req.query as Record<string, string>);
 
-  if (id !== undefined && typeof id !== 'number') {
+  const querySchema = zod.object({ id: zod.number().int().positive().optional() });
+  const { success, data } = querySchema.safeParse(parsedQuery);
+
+  if (!success) {
     res.status(400).json({ message: 'Bad request' });
     return;
   }
+
+  const { id } = data;
 
   try {
     const languageArr = await languageModel.getLanguage(id);
