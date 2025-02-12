@@ -3,10 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import { validateRequestQuery } from './middleware/app';
+import { validateRequestQuery } from './middlewares/appMiddleware';
 
-import authRouter from './route/authRoute';
-import userRouter from './route/userRoute';
+import authRouter from './routes/authRoute';
+import userRouter from './routes/userRoute';
 
 const app = express();
 

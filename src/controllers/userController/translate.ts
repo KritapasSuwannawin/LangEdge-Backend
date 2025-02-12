@@ -1,16 +1,16 @@
 import { Request, Response } from 'express';
 import zod from 'zod';
 
-import { getLanguage } from '../../model/languageModel';
+import { getLanguage } from '../../models/languageModel';
 
-import { parseQuery, logError } from '../../module/systemModule';
+import { parseQuery, logError } from '../../utilities/systemUtility';
 
 import {
   determineLanguageAndCategory,
   translateTextAndGenerateSynonyms,
   generateSynonyms,
   generateExampleSentences,
-} from '../../utils/llm';
+} from '../../externals/llm';
 
 const getTranslation = async (req: Request, res: Response) => {
   const parsedQuery = parseQuery(req.query as Record<string, string>);

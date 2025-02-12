@@ -1,4 +1,4 @@
-import Model from '../interface/model';
+import Model from '../interfaces/model';
 
 import BaseOpenAI from './baseOpenAI';
 

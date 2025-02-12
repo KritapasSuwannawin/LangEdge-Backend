@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { generateToken } from '../../module/authModule';
+import { generateToken } from '../../utilities/authUtility';
 
 const getToken = async (_req: Request, res: Response) => {
   // TODO: Change the payload to the user's data

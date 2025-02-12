@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { logError } from '../../module/systemModule';
+import { logError } from '../../utilities/systemUtility';
 
-import GPT4oMini from './model/gpt4oMini';
+import GPT4oMini from './models/gpt4oMini';
 
 export const determineLanguageAndCategory = async (
   text: string

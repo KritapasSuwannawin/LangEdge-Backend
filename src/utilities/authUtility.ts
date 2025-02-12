@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-import { logError } from './systemModule';
+import { logError } from './systemUtility';
 
 export const generateToken = (payload: JwtPayload): string => {
   return jwt.sign(payload, process.env.JWT_SECRET_KEY!, { expiresIn: '1d' });
