@@ -19,7 +19,7 @@ const getLanguage = async (req: Request, res: Response) => {
   const { id } = data;
 
   try {
-    const languageArr = await languageModel.getLanguage(id);
+    const languageArr = await languageModel.getLanguage(id, ['id', 'name', 'code']);
 
     res.status(200).json({ data: { languageArr } });
   } catch (err) {

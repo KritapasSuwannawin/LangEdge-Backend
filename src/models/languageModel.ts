@@ -1,11 +1,11 @@
 import { queryDatabase } from '../databases/postgres';
 
-export const getLanguage = async (id: number | 'ANY' = 'ANY', columnArr = ['*']): Promise<(Record<string, unknown> | undefined)[]> => {
+const getLanguage = async (id: number | 'ANY' = 'ANY', columnArr = ['*']): Promise<(Record<string, unknown> | undefined)[]> => {
   const valueArr: unknown[] = [];
   let query = 'SELECT ';
 
   columnArr.forEach((column) => {
-    query += `${column.trim()}, `;
+    query += `${column}, `;
   });
 
   query = query.slice(0, -2) + ' FROM language';
@@ -18,4 +18,16 @@ export const getLanguage = async (id: number | 'ANY' = 'ANY', columnArr = ['*'])
   return (await queryDatabase(query, valueArr)).rows;
 };
 
-export default { getLanguage };
+const getLanguageByName = async (name: string, columnArr = ['*']): Promise<Record<string, unknown> | undefined> => {
+  let query = 'SELECT ';
+
+  columnArr.forEach((column) => {
+    query += `${column}, `;
+  });
+
+  query = query.slice(0, -2) + ' FROM language WHERE LOWER(name) = LOWER($1)';
+
+  return (await queryDatabase(query, [name])).rows[0];
+};
+
+export default { getLanguage, getLanguageByName };

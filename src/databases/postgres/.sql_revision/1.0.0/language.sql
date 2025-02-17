@@ -86,3 +86,41 @@ INSERT INTO language (name, code, supported_by) VALUES
     ('Sundanese', 'su', '{gpt-4o-mini}'),
     ('Tatar', 'tt', '{gpt-4o-mini}'),
     ('Tswana', 'tn', '{gpt-4o-mini}');
+
+-- Create after insert trigger with the following functionalities:
+-- 1. Create partition translation_%s for language with id %s
+-- 2. Create partition synonym_%s for language with id %s
+-- 3. Create partition example_sentence_%s for language with id %s
+CREATE OR REPLACE FUNCTION create_language_partitions()
+RETURNS TRIGGER AS $$
+BEGIN
+    EXECUTE FORMAT('CREATE TABLE translation_%s PARTITION OF translation FOR VALUES IN (%s)', NEW.id, NEW.id);
+    EXECUTE FORMAT('CREATE TABLE synonym_%s PARTITION OF synonym FOR VALUES IN (%s)', NEW.id, NEW.id);
+    EXECUTE FORMAT('CREATE TABLE example_sentence_%s PARTITION OF example_sentence FOR VALUES IN (%s)', NEW.id, NEW.id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER language_after_insert_trigger
+AFTER INSERT ON language
+FOR EACH ROW
+EXECUTE FUNCTION create_language_partitions();
+
+-- Create before delete trigger with the following functionalities:
+-- 1. Drop partition translation_%s for language with id %s
+-- 2. Drop partition synonym_%s for language with id %s
+-- 3. Drop partition example_sentence_%s for language with id %s
+CREATE OR REPLACE FUNCTION drop_language_partitions()
+RETURNS TRIGGER AS $$
+BEGIN
+    EXECUTE FORMAT('DROP TABLE translation_%s', OLD.id);
+    EXECUTE FORMAT('DROP TABLE synonym_%s', OLD.id);
+    EXECUTE FORMAT('DROP TABLE example_sentence_%s', OLD.id);
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER language_before_delete_trigger
+BEFORE DELETE ON language
+FOR EACH ROW
+EXECUTE FUNCTION drop_language_partitions();
