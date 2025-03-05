@@ -1,25 +1,37 @@
 import { Request, Response, NextFunction } from 'express';
 import zod from 'zod';
 
-import { extractToken, decodeToken } from '../utilities/authUtility';
+import { verifyAccessToken } from '../externals/firebase';
 
-export const validateAuthToken = (req: Request, res: Response, next: NextFunction) => {
-  const token = extractToken(req);
+import { extractBearerToken } from '../utilities/authUtility';
+
+// Extend Express Request interface
+declare global {
+  namespace Express {
+    interface Request {
+      user: any;
+    }
+  }
+}
+
+export const validateAccessToken = async (req: Request, res: Response, next: NextFunction) => {
+  const bearerToken = extractBearerToken(req);
 
   const tokenSchema = zod.string().nonempty();
-  const { success, data } = tokenSchema.safeParse(token);
+  const { success, data: accessToken } = tokenSchema.safeParse(bearerToken);
 
   if (!success) {
     res.status(401).end();
     return;
   }
 
-  const decodedData = decodeToken(data);
+  const decodedData = await verifyAccessToken(accessToken);
 
   if (!decodedData) {
-    res.status(403).end();
+    res.status(401).end();
     return;
   }
 
+  req.user = decodedData;
   next();
 };

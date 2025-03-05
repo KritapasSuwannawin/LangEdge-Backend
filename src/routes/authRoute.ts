@@ -4,6 +4,6 @@ import authController from '../controllers/authController';
 
 const router = express.Router();
 
-router.route('/token').get(authController.getToken);
+router.route('/token/refresh').post(authController.refreshToken);
 
 export default router;
