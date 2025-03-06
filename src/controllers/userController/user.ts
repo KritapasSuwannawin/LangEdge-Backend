@@ -4,6 +4,7 @@ import { DatabaseError } from 'pg';
 
 import userModel from '../../models/userModel';
 
+import { downloadFile } from '../../utilities/httpUtility';
 import { logError } from '../../utilities/systemUtility';
 
 const signInUser = async (req: Request, res: Response) => {
@@ -23,7 +24,7 @@ const signInUser = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(200).json({ data: { userId, email, name, pictureUrl } });
+    res.status(200).json({ data: { userId, email, name, pictureUrl: pictureUrl ? await downloadFile(pictureUrl) : undefined } });
   } catch (err) {
     logError('signInUser', err);
     res.status(500).json({ message: 'Internal server error' });
