@@ -17,6 +17,7 @@ router.route('/translation').get(validateAccessToken, rateLimiter, userControlle
 router.route('/language').get(userController.getLanguage);
 
 // User
+router.route('/').patch(validateAccessToken, userController.updateUser);
 router.route('/sign-in').post(validateAccessToken, userController.signInUser);
 
 export default router;

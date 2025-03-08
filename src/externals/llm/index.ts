@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import zod from 'zod';
 
 import { logError } from '../../utilities/systemUtility';
 
@@ -26,13 +26,13 @@ Output requirements:
         },
         { role: 'user', content: text },
       ],
-      z.object({
-        output: z.union([
-          z.object({
-            language: z.string().describe('The language of the input text'),
-            category: z.enum(['Word', 'Phrase', 'Sentence', 'Paragraph']).describe('The linguistic category of the input text'),
+      zod.object({
+        output: zod.union([
+          zod.object({
+            language: zod.string().describe('The language of the input text'),
+            category: zod.enum(['Word', 'Phrase', 'Sentence', 'Paragraph']).describe('The linguistic category of the input text'),
           }),
-          z.object({ errorMessage: z.enum(['Invalid input']).describe('The error message based on edge cases') }),
+          zod.object({ errorMessage: zod.enum(['Invalid input']).describe('The error message based on edge cases') }),
         ]),
       })
     );
@@ -82,16 +82,16 @@ ${
         { role: 'user', content: text },
       ],
       isGenerateSynonyms
-        ? z.object({
-            translation: z.string().describe('The translated text'),
-            synonyms: z
-              .array(z.string().describe('Each synonym of the translated text'))
+        ? zod.object({
+            translation: zod.string().describe('The translated text'),
+            synonyms: zod
+              .array(zod.string().describe('Each synonym of the translated text'))
               .min(3)
               .max(5)
               .optional()
               .describe('The synonyms of the translated text'),
           })
-        : z.object({ translation: z.string().describe('The translated text') })
+        : zod.object({ translation: zod.string().describe('The translated text') })
     );
 
     if (!llmOutput) {
@@ -127,17 +127,17 @@ Output requirements:
         },
         { role: 'user', content: text },
       ],
-      z.object({
-        output: z.union([
-          z.object({
-            synonyms: z
-              .array(z.string().describe('Each synonym of the input text'))
+      zod.object({
+        output: zod.union([
+          zod.object({
+            synonyms: zod
+              .array(zod.string().describe('Each synonym of the input text'))
               .min(3)
               .max(5)
               .describe('The synonyms of the input text'),
           }),
-          z.object({
-            synonyms: z.array(z.string().optional()).length(0).describe('An empty array if no synonym can be generated'),
+          zod.object({
+            synonyms: zod.array(zod.string().optional()).length(0).describe('An empty array if no synonym can be generated'),
           }),
         ]),
       })
@@ -181,12 +181,12 @@ Output format: [ { "sentence": "...", "translation": "..." }, ... ]`,
         { role: 'user', content: text },
       ],
 
-      z.object({
-        output: z
+      zod.object({
+        output: zod
           .array(
-            z.object({
-              sentence: z.string().describe('The example sentence of the input text'),
-              translation: z.string().describe('The translation of the example sentence'),
+            zod.object({
+              sentence: zod.string().describe('The example sentence of the input text'),
+              translation: zod.string().describe('The translation of the example sentence'),
             })
           )
           .length(3)
