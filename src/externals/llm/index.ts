@@ -9,19 +9,23 @@ export const determineLanguageAndCategory = async (
 ): Promise<{ language: string; category: 'Word' | 'Phrase' | 'Sentence' | 'Paragraph' } | { errorMessage: 'Invalid input' } | null> => {
   try {
     const llmOutput = await new GPT4oMini().call(
-      `You are a linguistic expert.
+      [
+        {
+          role: 'system',
+          content: `You are a linguistic expert.
 
-Your task is to process the given input text and produce a JSON response.
+Your task is to process the user's input text following the instructions below and produce a JSON response.
 
-Processing instructions:
+Instructions:
 1. Determine the language of the input text.
-2. Determine the linguistic category of the input text.
+2. Determine the linguistic category of the input text (word, phrase, sentence, or paragraph).
 
 Output requirements:
 - If the input text is understandable: output { "language": "...", "category": "..." }
-- If the input text is invalid (e.g., non-understandable or non-textual content), output { "errorMessage": "Invalid input" }
-
-Input text: ${text}`,
+- If the input text is invalid (e.g., non-understandable or non-textual content), output { "errorMessage": "Invalid input" }`,
+        },
+        { role: 'user', content: text },
+      ],
       z.object({
         output: z.union([
           z.object({
@@ -56,11 +60,14 @@ export const translateTextAndGenerateSynonyms = async (
 ): Promise<{ translation: string; synonyms: string[] } | null> => {
   try {
     const llmOutput = await new GPT4oMini().call(
-      `You are a linguistic expert.
+      [
+        {
+          role: 'system',
+          content: `You are a linguistic expert.
 
-Your task is to process the given input text and produce a JSON response.
+Your task is to process the user's input text following the instructions below and produce a JSON response.
 
-Processing instructions:
+Instructions:
 1. Translate the text from ${inputLanguage} into ${outputLanguage}.
 ${isGenerateSynonyms ? `2. Generate 3-5 synonyms for the translated text in ${outputLanguage}.` : ''}
 
@@ -70,9 +77,10 @@ ${
 - If synonyms can be generated, output { "translation": "...", "synonyms": [ ... ] }
 - If no synonym can be generated, output only: { "translation": "..." }`
     : `Output format: { "translation": "..." }`
-}
-
-Input text: ${text}`,
+}`,
+        },
+        { role: 'user', content: text },
+      ],
       isGenerateSynonyms
         ? z.object({
             translation: z.string().describe('The translated text'),
@@ -104,19 +112,34 @@ Input text: ${text}`,
 export const generateSynonyms = async (text: string, language: string): Promise<string[] | null> => {
   try {
     const llmOutput = await new GPT4oMini().call(
-      `You are a linguistic expert.
+      [
+        {
+          role: 'system',
+          content: `You are a linguistic expert.
 
-Your task is to process the given input text and produce a JSON response.
+Your task is to process the user's input text following the instruction below and produce a JSON response.
 
-Processing instruction: Generate 3-5 synonyms for the input text in ${language}.
+Instruction: Generate 3-5 synonyms for the input text in ${language}.
 
 Output requirements:
 - If synonyms can be generated, output { "synonyms": [ ... ] }
-- If no synonym can be generated, output am empty array: { "synonyms": [] }
-
-Input text: ${text}`,
+- If no synonym can be generated, output am empty array: { "synonyms": [] }`,
+        },
+        { role: 'user', content: text },
+      ],
       z.object({
-        synonyms: z.array(z.string().describe('Each synonym of the input text')).min(3).max(5).describe('The synonyms of the input text'),
+        output: z.union([
+          z.object({
+            synonyms: z
+              .array(z.string().describe('Each synonym of the input text'))
+              .min(3)
+              .max(5)
+              .describe('The synonyms of the input text'),
+          }),
+          z.object({
+            synonyms: z.array(z.string().optional()).length(0).describe('An empty array if no synonym can be generated'),
+          }),
+        ]),
       })
     );
 
@@ -126,7 +149,7 @@ Input text: ${text}`,
 
     console.log('generateSynonyms:', llmOutput);
 
-    const { synonyms } = llmOutput as { synonyms: string[] };
+    const { synonyms } = llmOutput.output as { synonyms: string[] };
 
     return synonyms;
   } catch (err) {
@@ -142,17 +165,22 @@ export const generateExampleSentences = async (
 ): Promise<{ sentence: string; translation: string }[] | null> => {
   try {
     const llmOutput = await new GPT4oMini().call(
-      `You are a linguistic expert.
+      [
+        {
+          role: 'system',
+          content: `You are a linguistic expert.
 
-Your task is to process the given input text and produce a JSON response.
+Your task is to process the user's input text following the instructions below and produce a JSON response.
 
-Processing instruction:
+Instruction:
 1. Generate 3 example sentences for the input text in ${inputLanguage}.
 2. Translate each example sentence into ${translationLanguage}.
 
-Output format: [ { "sentence": "...", "translation": "..." }, ... ]
+Output format: [ { "sentence": "...", "translation": "..." }, ... ]`,
+        },
+        { role: 'user', content: text },
+      ],
 
-Input text: ${text}`,
       z.object({
         output: z
           .array(

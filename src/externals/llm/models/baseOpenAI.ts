@@ -25,7 +25,11 @@ export default class BaseOpenAI implements Model {
     return this.inputCost * (inputToken / 1000000) + this.outputCost * (outputToken / 1000000);
   }
 
-  async call(prompt: string, structure: ZodType<Record<string, unknown>>, timeout = 5000): Promise<Record<string, unknown> | void> {
+  async call(
+    prompt: { role: 'user' | 'system'; content: string }[],
+    structure: ZodType<Record<string, unknown>>,
+    timeout = 5000
+  ): Promise<Record<string, unknown> | void> {
     let availableCall = 2;
 
     while (availableCall > 0) {

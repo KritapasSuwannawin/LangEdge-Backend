@@ -8,5 +8,9 @@ export default interface Model {
 
   calculateCost(inputPrompt: string, outputPrompt: string): Promise<number>;
 
-  call(prompt: string, structure: ZodType<Record<string, unknown>>, timeout: number): Promise<Record<string, unknown> | void>;
+  call(
+    prompt: { role: 'user' | 'system'; content: string }[],
+    structure: ZodType<Record<string, unknown>>,
+    timeout: number
+  ): Promise<Record<string, unknown> | void>;
 }
