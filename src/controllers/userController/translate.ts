@@ -163,21 +163,30 @@ const getTranslation = async (req: Request, res: Response) => {
     // isShortInputText && inputTextSynonym, translationSynonym, and exampleSentence exist -> Store output to database
     try {
       if (isShortInputText && [inputTextSynonymArr, translationSynonymArr, exampleSentenceArr].every((arr) => arr.length > 0)) {
-        await Promise.all([
+        const exampleSentenceTranslationIdResultArr = await Promise.allSettled(
+          exampleSentenceArr.map(({ sentence, translation }) =>
+            translationModel.insertTranslation(sentence, originalLanguageId, translation, outputLanguageId)
+          )
+        );
+
+        const exampleSentenceTranslationIdArr = exampleSentenceTranslationIdResultArr
+          .filter((result) => result.status === 'fulfilled')
+          .map((result) => result.value);
+
+        const storeOutputResultArr = await Promise.allSettled([
           translationModel.insertTranslation(text, originalLanguageId, translation, outputLanguageId),
           synonymModel.insertSynonym(text, inputTextSynonymArr, originalLanguageId),
           synonymModel.insertSynonym(translation, translationSynonymArr, outputLanguageId),
-          await exampleSentenceModel.insertExampleSentence(
-            text,
-            await Promise.all(
-              exampleSentenceArr.map(({ sentence, translation }) =>
-                translationModel.insertTranslation(sentence, originalLanguageId, translation, outputLanguageId)
-              )
-            ),
-            originalLanguageId,
-            outputLanguageId
-          ),
+          exampleSentenceTranslationIdArr.length > 0 &&
+            exampleSentenceModel.insertExampleSentence(text, exampleSentenceTranslationIdArr, originalLanguageId, outputLanguageId),
         ]);
+
+        // some non-constraint error occurred -> throw error
+        for (const storeOutputResult of storeOutputResultArr) {
+          if (storeOutputResult.status === 'rejected' && !('constraint' in storeOutputResult.reason)) {
+            throw storeOutputResult.reason;
+          }
+        }
       }
     } catch (err) {
       logError('storeOutput', err);
