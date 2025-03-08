@@ -3,10 +3,10 @@ import { DecodedIdToken } from 'firebase-admin/auth';
 import { DatabaseError } from 'pg';
 import zod from 'zod';
 
-import userModel from '../../models/userModel';
+import userModel from '../models/userModel';
 
-import { downloadFile } from '../../utilities/httpUtility';
-import { logError } from '../../utilities/systemUtility';
+import { downloadFile } from '../utilities/httpUtility';
+import { logError } from '../utilities/systemUtility';
 
 const updateUser = async (req: Request, res: Response) => {
   const {

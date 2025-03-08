@@ -7,6 +7,8 @@ import { validateRequestQuery } from './middlewares/appMiddleware';
 
 import authRouter from './routes/authRoute';
 import userRouter from './routes/userRoute';
+import languageRouter from './routes/languageRoute';
+import translationRouter from './routes/translationRoute';
 
 const app = express();
 
@@ -31,5 +33,7 @@ app.use(validateRequestQuery);
 
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
+app.use('/api/language', languageRouter);
+app.use('/api/translation', translationRouter);
 
 export default app;
