@@ -89,6 +89,11 @@ const getTranslation = async (req: Request, res: Response) => {
     if (translationRecordSuccess) {
       const { output_text: translation } = translationRecordData;
 
+      if (!isShortInputText) {
+        res.status(200).json({ data: { originalLanguageName, translation } });
+        return;
+      }
+
       const [inputTextSynonymRecordArr, translationSynonymRecordArr, exampleSentenceRecordArr] = await Promise.all([
         synonymModel.getSynonymByText(text, originalLanguageId, ['synonym_arr']),
         synonymModel.getSynonymByText(translation, outputLanguageId, ['synonym_arr']),

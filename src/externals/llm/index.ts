@@ -22,7 +22,10 @@ Instructions:
 
 Output requirements:
 - If the input text is understandable: output { "language": "...", "category": "..." }
-- If the input text is invalid (e.g., non-understandable or non-textual content), output { "errorMessage": "Invalid input" }`,
+- If the input text is non-understandable, output { "errorMessage": "Invalid input" }
+
+Note:
+- A short understandable text is a word.`,
         },
         { role: 'user', content: text },
       ],
@@ -32,7 +35,9 @@ Output requirements:
             language: zod.string().describe('The language of the input text'),
             category: zod.enum(['Word', 'Phrase', 'Sentence', 'Paragraph']).describe('The linguistic category of the input text'),
           }),
-          zod.object({ errorMessage: zod.enum(['Invalid input']).describe('The error message based on edge cases') }),
+          zod.object({
+            errorMessage: zod.enum(['Invalid input']).describe('The error message based on edge cases'),
+          }),
         ]),
       })
     );
@@ -91,7 +96,9 @@ ${
               .optional()
               .describe('The synonyms of the translated text'),
           })
-        : zod.object({ translation: zod.string().describe('The translated text') })
+        : zod.object({
+            translation: zod.string().describe('The translated text'),
+          })
     );
 
     if (!llmOutput) {
