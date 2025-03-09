@@ -1,6 +1,6 @@
 import { ZodType } from 'zod';
 
-export default interface Model {
+export interface LLM {
   inputCost: number;
   outputCost: number;
 

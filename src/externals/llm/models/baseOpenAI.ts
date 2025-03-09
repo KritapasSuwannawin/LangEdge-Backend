@@ -1,9 +1,9 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { ZodType } from 'zod';
 
-import Model from '../interfaces/model';
+import { LLM } from '../interfaces';
 
-export default class BaseOpenAI implements Model {
+export default class BaseOpenAI implements LLM {
   llm: ChatOpenAI;
   inputCost: number;
   outputCost: number;

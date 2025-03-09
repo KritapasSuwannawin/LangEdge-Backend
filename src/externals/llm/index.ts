@@ -1,14 +1,15 @@
 import zod from 'zod';
 
+import { getLLM } from './models';
+
 import { logError } from '../../utilities/systemUtility';
 
-import GPT4oMini from './models/gpt4oMini';
-
 export const determineLanguageAndCategory = async (
-  text: string
+  text: string,
+  llm = getLLM('gpt-4o-mini')
 ): Promise<{ language: string; category: 'Word' | 'Phrase' | 'Sentence' | 'Paragraph' } | { errorMessage: 'Invalid input' } | null> => {
   try {
-    const llmOutput = await new GPT4oMini().call(
+    const llmOutput = await llm.call(
       [
         {
           role: 'system',
@@ -61,10 +62,11 @@ export const translateTextAndGenerateSynonyms = async (
   text: string,
   isGenerateSynonyms: boolean,
   inputLanguage: string,
-  outputLanguage: string
+  outputLanguage: string,
+  llm = getLLM('gpt-4o-mini')
 ): Promise<{ translation: string; synonyms: string[] } | null> => {
   try {
-    const llmOutput = await new GPT4oMini().call(
+    const llmOutput = await llm.call(
       [
         {
           role: 'system',
@@ -116,9 +118,9 @@ ${
   }
 };
 
-export const generateSynonyms = async (text: string, language: string): Promise<string[] | null> => {
+export const generateSynonyms = async (text: string, language: string, llm = getLLM('gpt-4o-mini')): Promise<string[] | null> => {
   try {
-    const llmOutput = await new GPT4oMini().call(
+    const llmOutput = await llm.call(
       [
         {
           role: 'system',
@@ -168,10 +170,11 @@ Output requirements:
 export const generateExampleSentences = async (
   text: string,
   inputLanguage: string,
-  translationLanguage: string
+  translationLanguage: string,
+  llm = getLLM('gpt-4o-mini')
 ): Promise<{ sentence: string; translation: string }[] | null> => {
   try {
-    const llmOutput = await new GPT4oMini().call(
+    const llmOutput = await llm.call(
       [
         {
           role: 'system',
