@@ -6,7 +6,7 @@ import { logError } from '../../utilities/systemUtility';
 
 export const determineLanguageAndCategory = async (
   text: string,
-  llm = getLLM('gpt-4o-mini')
+  llm = getLLM('gpt-4o')
 ): Promise<{ language: string; category: 'Word' | 'Phrase' | 'Sentence' | 'Paragraph' } | { errorMessage: 'Invalid input' } | null> => {
   try {
     const llmOutput = await llm.call(
@@ -63,7 +63,7 @@ export const translateTextAndGenerateSynonyms = async (
   isGenerateSynonyms: boolean,
   inputLanguage: string,
   outputLanguage: string,
-  llm = getLLM('gpt-4o-mini')
+  llm = getLLM('gpt-4o')
 ): Promise<{ translation: string; synonyms: string[] } | null> => {
   try {
     const llmOutput = await llm.call(
@@ -118,7 +118,7 @@ ${
   }
 };
 
-export const generateSynonyms = async (text: string, language: string, llm = getLLM('gpt-4o-mini')): Promise<string[] | null> => {
+export const generateSynonyms = async (text: string, language: string, llm = getLLM('gpt-4o')): Promise<string[] | null> => {
   try {
     const llmOutput = await llm.call(
       [
@@ -171,7 +171,7 @@ export const generateExampleSentences = async (
   text: string,
   inputLanguage: string,
   translationLanguage: string,
-  llm = getLLM('gpt-4o-mini')
+  llm = getLLM('gpt-4o')
 ): Promise<{ sentence: string; translation: string }[] | null> => {
   try {
     const llmOutput = await llm.call(

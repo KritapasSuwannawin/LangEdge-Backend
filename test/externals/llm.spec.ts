@@ -74,7 +74,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o-mini');
+      const mockLLM = getLLM('gpt-4o');
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await determineLanguageAndCategory('Hello', mockLLM);
@@ -119,7 +119,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o-mini');
+      const mockLLM = getLLM('gpt-4o');
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await translateTextAndGenerateSynonyms('Hello', false, 'English', 'Spanish', mockLLM);
@@ -146,7 +146,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o-mini');
+      const mockLLM = getLLM('gpt-4o');
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await generateSynonyms('Happy', 'English', mockLLM);
@@ -179,7 +179,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o-mini');
+      const mockLLM = getLLM('gpt-4o');
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await generateExampleSentences('happy', 'English', 'Spanish', mockLLM);
