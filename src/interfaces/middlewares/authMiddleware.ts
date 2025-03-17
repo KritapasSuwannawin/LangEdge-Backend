@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import zod from 'zod';
 
-import { verifyAccessToken } from '../../infrastructure/services/firebaseService';
+import FirebaseService from '../../infrastructure/services/FirebaseService';
 
 import { extractBearerToken } from '../../shared/utils/authUtils';
 
@@ -14,6 +14,8 @@ declare global {
   }
 }
 
+const firebaseService = new FirebaseService();
+
 export const validateAccessToken = async (req: Request, res: Response, next: NextFunction) => {
   const bearerToken = extractBearerToken(req);
 
@@ -25,7 +27,7 @@ export const validateAccessToken = async (req: Request, res: Response, next: Nex
     return;
   }
 
-  const decodedData = await verifyAccessToken(accessToken);
+  const decodedData = await firebaseService.verifyAccessToken(accessToken);
 
   if (!decodedData) {
     res.status(401).end();
