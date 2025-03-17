@@ -1,4 +1,4 @@
-import { queryDatabase } from '../databases/postgres';
+import { queryDatabase } from '../database/postgres';
 
 const insertSynonym = async (text: string, synonymArr: string[], languageId: number): Promise<number> => {
   const query = `INSERT INTO synonym_${languageId} (text, synonym_arr, language_id)

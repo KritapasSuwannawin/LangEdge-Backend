@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import zod from 'zod';
 
-import { logError } from '../utilities/systemUtility';
+import { logError } from '../shared/utils/systemUtils';
 
 const refreshToken = async (req: Request, res: Response) => {
   const requestBodySchema = zod.object({ refreshToken: zod.string() });

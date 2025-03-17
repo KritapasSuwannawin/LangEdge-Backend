@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import zod from 'zod';
 
-import languageModel from '../models/languageModel';
+import languageModel from '../infrastructure/models/languageModel';
 
-import { parseQuery, logError } from '../utilities/systemUtility';
+import { parseQuery, logError } from '../shared/utils/systemUtils';
 
 const getLanguage = async (req: Request, res: Response) => {
   const parsedQuery = parseQuery(req.query as Record<string, string>);

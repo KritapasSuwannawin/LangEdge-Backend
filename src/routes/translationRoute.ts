@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 
 import translateController from '../controllers/translateController';
 
-import { validateAccessToken } from '../middlewares/userMiddleware';
+import { validateAccessToken } from '../interfaces/middlewares/authMiddleware';
 
 const router = express.Router();
 

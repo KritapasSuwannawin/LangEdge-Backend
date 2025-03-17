@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import zod from 'zod';
 
-import { verifyAccessToken } from '../externals/firebase';
+import { verifyAccessToken } from '../../infrastructure/services/firebaseService';
 
-import { extractBearerToken } from '../utilities/authUtility';
+import { extractBearerToken } from '../../shared/utils/authUtils';
 
 // Extend Express Request interface
 declare global {

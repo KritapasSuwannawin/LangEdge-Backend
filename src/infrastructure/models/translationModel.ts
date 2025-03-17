@@ -1,4 +1,4 @@
-import { queryDatabase } from '../databases/postgres';
+import { queryDatabase } from '../database/postgres';
 
 const insertTranslation = async (
   inputText: string,

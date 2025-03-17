@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import { validateRequestQuery } from './middlewares/appMiddleware';
+import { validateRequestQuery } from './interfaces/middlewares/requestMiddleware';
 
 import authRouter from './routes/authRoute';
 import userRouter from './routes/userRoute';

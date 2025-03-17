@@ -6,8 +6,8 @@ import {
   translateTextAndGenerateSynonyms,
   generateSynonyms,
   generateExampleSentences,
-} from '../../src/externals/llm';
-import { getLLM } from '../../src/externals/llm/models';
+} from '../../src/infrastructure/services/llmService';
+import { getLLM } from '../../src/infrastructure/services/llmService/llmModels';
 
 describe('LLM Functions', function () {
   // Increase timeout for this test suite

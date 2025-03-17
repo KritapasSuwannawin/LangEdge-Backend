@@ -1,19 +1,19 @@
 import { Request, Response } from 'express';
 import zod from 'zod';
 
-import languageModel from '../models/languageModel';
-import translationModel from '../models/translationModel';
-import synonymModel from '../models/synonymModel';
-import exampleSentenceModel from '../models/exampleSentenceModel';
+import languageModel from '../infrastructure/models/languageModel';
+import translationModel from '../infrastructure/models/translationModel';
+import synonymModel from '../infrastructure/models/synonymModel';
+import exampleSentenceModel from '../infrastructure/models/exampleSentenceModel';
 
-import { parseQuery, logError } from '../utilities/systemUtility';
+import { parseQuery, logError } from '../shared/utils/systemUtils';
 
 import {
   determineLanguageAndCategory,
   translateTextAndGenerateSynonyms,
   generateSynonyms,
   generateExampleSentences,
-} from '../externals/llm';
+} from '../infrastructure/services/llmService';
 
 const getTranslation = async (req: Request, res: Response) => {
   const parsedQuery = parseQuery(req.query as Record<string, string>);

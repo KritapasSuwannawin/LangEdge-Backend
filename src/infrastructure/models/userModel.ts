@@ -1,4 +1,4 @@
-import { queryDatabase } from '../databases/postgres';
+import { queryDatabase } from '../database/postgres';
 
 const insertUser = async (id: string, email: string, name: string, picture_url: string | null): Promise<string> => {
   const query = `INSERT INTO "user" (id, email, name, picture_url)

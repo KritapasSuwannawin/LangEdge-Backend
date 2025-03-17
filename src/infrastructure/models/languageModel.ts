@@ -1,4 +1,4 @@
-import { queryDatabase } from '../databases/postgres';
+import { queryDatabase } from '../database/postgres';
 
 const getLanguage = async (id: number | 'ANY' = 'ANY', columnArr = ['*']): Promise<(Record<string, unknown> | undefined)[]> => {
   const valueArr: unknown[] = [];

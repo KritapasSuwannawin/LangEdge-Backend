@@ -1,8 +1,8 @@
 import zod from 'zod';
 
-import { getLLM } from './models';
+import { getLLM } from './llmModels';
 
-import { logError } from '../../utilities/systemUtility';
+import { logError } from '../../../shared/utils/systemUtils';
 
 export const determineLanguageAndCategory = async (
   text: string,

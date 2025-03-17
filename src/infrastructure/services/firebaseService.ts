@@ -1,7 +1,7 @@
 import { initializeApp, cert, ServiceAccount } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-import { logError } from '../utilities/systemUtility';
+import { logError } from '../../shared/utils/systemUtils';
 
 initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!) as ServiceAccount) });
 

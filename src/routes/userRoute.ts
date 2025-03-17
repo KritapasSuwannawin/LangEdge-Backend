@@ -2,7 +2,7 @@ import express from 'express';
 
 import userController from '../controllers/userController';
 
-import { validateAccessToken } from '../middlewares/userMiddleware';
+import { validateAccessToken } from '../interfaces/middlewares/authMiddleware';
 
 const router = express.Router();
 
