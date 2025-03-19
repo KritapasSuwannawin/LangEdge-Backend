@@ -1,13 +1,19 @@
 import IFirebaseService from '../../../core/interfaces/IFirebaseService';
 
+import FirebaseService from '../../../infrastructure/services/FirebaseService';
+
 import { logError } from '../../../shared/utils/systemUtils';
 
 export default class RefreshTokenUseCase {
-  constructor(private tokenRepository: IFirebaseService) {}
+  private firebaseService: IFirebaseService;
 
-  async execute(refreshToken: string) {
+  constructor(firebaseService = new FirebaseService()) {
+    this.firebaseService = firebaseService;
+  }
+
+  async execute(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const tokenData = await this.tokenRepository.refreshToken(refreshToken);
+      const tokenData = await this.firebaseService.refreshToken(refreshToken);
 
       return {
         accessToken: tokenData.idToken,

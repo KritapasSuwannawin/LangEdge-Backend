@@ -1,15 +1,12 @@
 import { Request, Response } from 'express';
 import zod from 'zod';
 
-import FirebaseService from '../../../infrastructure/services/FirebaseService';
-
 import { logError } from '../../../shared/utils/systemUtils';
 
-import { refreshTokenSchema } from '../schemas/authValidation';
+import { refreshTokenSchema } from '../schemas/authSchema';
 import RefreshTokenUseCase from '../useCases/RefreshTokenUseCase';
 
-const firebaseService = new FirebaseService();
-const refreshTokenUseCase = new RefreshTokenUseCase(firebaseService);
+const refreshTokenUseCase = new RefreshTokenUseCase();
 
 const refreshToken = async (req: Request, res: Response) => {
   try {

@@ -5,7 +5,7 @@ import morgan from 'morgan';
 
 import { validateRequestQuery } from './interfaces/middlewares/requestMiddleware';
 
-import authRouter from './routes/authRoute';
+import authRouter from './modules/auth/routes/authRoute';
 import userRouter from './routes/userRoute';
 import languageRouter from './routes/languageRoute';
 import translationRouter from './routes/translationRoute';

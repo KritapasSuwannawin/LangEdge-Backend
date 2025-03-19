@@ -1,5 +1,5 @@
 import { initializeApp, cert, ServiceAccount } from 'firebase-admin/app';
-import { Auth, getAuth } from 'firebase-admin/auth';
+import { Auth, DecodedIdToken, getAuth } from 'firebase-admin/auth';
 import zod from 'zod';
 
 import IFirebaseService from '../../core/interfaces/IFirebaseService';
@@ -9,16 +9,22 @@ import { logError } from '../../shared/utils/systemUtils';
 initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!) as ServiceAccount) });
 
 export default class FirebaseService implements IFirebaseService {
-  async verifyAccessToken(accessToken: string, auth: Auth = getAuth()) {
+  private auth: Auth;
+
+  constructor(auth = getAuth()) {
+    this.auth = auth;
+  }
+
+  async verifyAccessToken(accessToken: string): Promise<DecodedIdToken | null> {
     try {
-      return await auth.verifyIdToken(accessToken);
+      return await this.auth.verifyIdToken(accessToken);
     } catch (error) {
       logError('FirebaseService.verifyAccessToken', error);
       return null;
     }
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken: string): Promise<{ idToken: string; refreshToken: string }> {
     try {
       const tokenDataResponse = await (
         await fetch(`https://securetoken.googleapis.com/v1/token?key=${process.env.FIREBASE_API_KEY}`, {
