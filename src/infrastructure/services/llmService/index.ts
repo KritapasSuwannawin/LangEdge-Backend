@@ -4,9 +4,11 @@ import { getLLM } from './llmModels';
 
 import { logError } from '../../../shared/utils/systemUtils';
 
+const defaultLLM = getLLM();
+
 export const determineLanguageAndCategory = async (
   text: string,
-  llm = getLLM('gpt-4o')
+  llm = defaultLLM
 ): Promise<{ language: string; category: 'Word' | 'Phrase' | 'Sentence' | 'Paragraph' } | { errorMessage: 'Invalid input' } | null> => {
   try {
     const llmOutput = await llm.call(
@@ -63,7 +65,7 @@ export const translateTextAndGenerateSynonyms = async (
   isGenerateSynonyms: boolean,
   inputLanguage: string,
   outputLanguage: string,
-  llm = getLLM('gpt-4o')
+  llm = defaultLLM
 ): Promise<{ translation: string; synonyms: string[] } | null> => {
   try {
     const llmOutput = await llm.call(
@@ -78,13 +80,7 @@ Instructions:
 1. Translate the text from ${inputLanguage} into ${outputLanguage}.
 ${isGenerateSynonyms ? `2. Generate 3-5 synonyms for the translated text in ${outputLanguage}.` : ''}
 
-${
-  isGenerateSynonyms
-    ? `Output requirements: 
-- If synonyms can be generated, output { "translation": "...", "synonyms": [ ... ] }
-- If no synonym can be generated, output only: { "translation": "..." }`
-    : `Output format: { "translation": "..." }`
-}`,
+Output format: ${isGenerateSynonyms ? '{ "translation": "...", "synonyms": [ ... ] }' : '{ "translation": "..." }'}`,
         },
         { role: 'user', content: text },
       ],
@@ -95,7 +91,6 @@ ${
               .array(zod.string().describe('Each synonym of the translated text'))
               .min(3)
               .max(5)
-              .optional()
               .describe('The synonyms of the translated text'),
           })
         : zod.object({
@@ -118,7 +113,7 @@ ${
   }
 };
 
-export const generateSynonyms = async (text: string, language: string, llm = getLLM('gpt-4o')): Promise<string[] | null> => {
+export const generateSynonyms = async (text: string, language: string, llm = defaultLLM): Promise<string[] | null> => {
   try {
     const llmOutput = await llm.call(
       [
@@ -146,7 +141,7 @@ Output requirements:
               .describe('The synonyms of the input text'),
           }),
           zod.object({
-            synonyms: zod.array(zod.string().optional()).length(0).describe('An empty array if no synonym can be generated'),
+            synonyms: zod.array(zod.string()).length(0).describe('An empty array if no synonym can be generated'),
           }),
         ]),
       })
@@ -171,7 +166,7 @@ export const generateExampleSentences = async (
   text: string,
   inputLanguage: string,
   translationLanguage: string,
-  llm = getLLM('gpt-4o')
+  llm = defaultLLM
 ): Promise<{ sentence: string; translation: string }[] | null> => {
   try {
     const llmOutput = await llm.call(

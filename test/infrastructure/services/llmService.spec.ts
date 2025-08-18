@@ -10,6 +10,12 @@ import {
 import { getLLM } from '../../../src/infrastructure/services/llmService/llmModels';
 
 describe('LLM Functions', function () {
+  let defaultLLM: ReturnType<typeof getLLM>;
+
+  beforeEach(() => {
+    defaultLLM = getLLM();
+  });
+
   // Increase timeout for this test suite
   this.timeout(10000);
 
@@ -74,7 +80,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o');
+      const mockLLM = defaultLLM;
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await determineLanguageAndCategory('Hello', mockLLM);
@@ -119,7 +125,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o');
+      const mockLLM = defaultLLM;
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await translateTextAndGenerateSynonyms('Hello', false, 'English', 'Spanish', mockLLM);
@@ -146,7 +152,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o');
+      const mockLLM = defaultLLM;
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await generateSynonyms('Happy', 'English', mockLLM);
@@ -179,7 +185,7 @@ describe('LLM Functions', function () {
 
     // Error handling
     it('should return null when an error occurs', async () => {
-      const mockLLM = getLLM('gpt-4o');
+      const mockLLM = defaultLLM;
       mockLLM.call = sinon.stub().throws(new Error('Test error'));
 
       const result = await generateExampleSentences('happy', 'English', 'Spanish', mockLLM);

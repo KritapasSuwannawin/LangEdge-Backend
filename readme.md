@@ -16,7 +16,7 @@ LangEdge Backend provides the API services and server-side logic that powers the
 
 ## Links
 
-- **Live Website**: [langedge.pages.dev](https://langedge.pages.dev)
+- **Live Website**: [langedge.kritapas.dev](https://langedge.kritapas.dev)
 - **Frontend Repository**: [LangEdge-Frontend](https://github.com/KritapasSuwannawin/LangEdge-Frontend)
 
 ## Tech Stack

@@ -9,7 +9,7 @@ export default class BaseOpenAI implements LLM {
   outputCost: number;
 
   constructor(model: string, inputCost: number, outputCost: number) {
-    this.llm = new ChatOpenAI({ model, temperature: 0.5, maxTokens: -1, streaming: true, cache: false });
+    this.llm = new ChatOpenAI({ model, maxTokens: -1, streaming: true, cache: false });
 
     this.inputCost = inputCost;
     this.outputCost = outputCost;
@@ -47,7 +47,7 @@ export default class BaseOpenAI implements LLM {
           try {
             let answer: Record<string, unknown> | undefined;
 
-            const stream = await this.llm.withStructuredOutput(structure).stream(prompt, { signal: controller.signal });
+            const stream = await this.llm.withStructuredOutput(structure, { strict: true }).stream(prompt, { signal: controller.signal });
 
             for await (const chunk of stream) {
               streaming = true;
