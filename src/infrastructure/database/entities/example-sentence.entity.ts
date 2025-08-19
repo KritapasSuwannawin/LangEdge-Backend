@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, Unique, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, PrimaryColumn, Column, Unique, ManyToOne, JoinColumn } from 'typeorm';
 import { Language } from './language.entity';
 
 @Entity('example_sentence')
@@ -13,7 +13,7 @@ export class ExampleSentence {
   @Column({ type: 'int', array: true, default: () => "'{}'" })
   example_sentence_translation_id_arr: number[];
 
-  @Column({ type: 'int' })
+  @PrimaryColumn({ type: 'int' })
   language_id: number;
 
   @ManyToOne(() => Language, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })

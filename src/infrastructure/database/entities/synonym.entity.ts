@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, Unique, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, PrimaryColumn, Column, Unique, ManyToOne, JoinColumn } from 'typeorm';
 import { Language } from './language.entity';
 
 @Entity('synonym')
@@ -13,7 +13,7 @@ export class Synonym {
   @Column({ type: 'text', array: true, default: () => "'{}'" })
   synonym_arr: string[];
 
-  @Column({ type: 'int' })
+  @PrimaryColumn({ type: 'int' })
   language_id: number;
 
   @ManyToOne(() => Language, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })

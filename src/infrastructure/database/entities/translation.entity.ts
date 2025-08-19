@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, PrimaryColumn, Column, CreateDateColumn, Unique, ManyToOne, JoinColumn } from 'typeorm';
 import { Language } from './language.entity';
 
 @Entity('translation')
@@ -10,7 +10,7 @@ export class Translation {
   @Column({ type: 'text' })
   input_text: string;
 
-  @Column({ type: 'int' })
+  @PrimaryColumn({ type: 'int' })
   input_language_id: number;
 
   @ManyToOne(() => Language, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
