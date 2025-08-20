@@ -27,7 +27,10 @@ export class UserController {
   async signInUser(@Req() req: Request) {
     try {
       const { user_id: userId, email, name, picture } = req.user;
-      return await this.userService.signInUser(userId, email!, name, picture);
+      if (!email) {
+        throw new BadRequestException('Email is required for sign-in');
+      }
+      return await this.userService.signInUser(userId, email, name, picture);
     } catch (error) {
       logError('signInUser', error);
       throw new InternalServerErrorException('Internal server error');
