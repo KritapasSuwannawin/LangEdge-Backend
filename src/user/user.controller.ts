@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import { Controller, Patch, Post, Body, InternalServerErrorException, UseGuards, Req } from '@nestjs/common';
+import { Controller, Patch, Post, Body, InternalServerErrorException, UseGuards, Req, BadRequestException } from '@nestjs/common';
 
 import { logError } from '../shared/utils/systemUtils';
 import { AuthGuard } from '../auth/auth.guard';
@@ -27,9 +27,11 @@ export class UserController {
   async signInUser(@Req() req: Request) {
     try {
       const { user_id: userId, email, name, picture } = req.user;
+
       if (!email) {
-        throw new BadRequestException('Email is required for sign-in');
+        throw new BadRequestException('Bad request');
       }
+
       return await this.userService.signInUser(userId, email, name, picture);
     } catch (error) {
       logError('signInUser', error);
