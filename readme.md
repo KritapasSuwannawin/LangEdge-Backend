@@ -8,11 +8,12 @@ LangEdge Backend provides the API services and server-side logic that powers the
 
 ## Features
 
-- **RESTful API**: Well-structured API endpoints for frontend communication
-- **AI Integration**: Connections to language model services for translation functionality
-- **Authentication Services**: Secure user authentication and authorization
+- **RESTful API**: Well-structured endpoints for frontend communication
+- **AI Integration**: Connects to language model services for translation and NLP features
+- **Authentication**: Secure user authentication and authorization
 - **Database Operations**: Efficient data storage and retrieval
 - **Error Handling**: Robust error management and logging
+- **Containerization**: Docker support for easy deployment
 
 ## Links
 
@@ -22,16 +23,17 @@ LangEdge Backend provides the API services and server-side logic that powers the
 ## Tech Stack
 
 - **Runtime**: Node.js
-- **Framework**: Express.js with TypeScript
+- **Framework**: NestJS with TypeScript
 - **Authentication**: Firebase
-- **Testing**: Mocha, Chai, Sinon
+- **Database**: PostgreSQL, TypeORM
+- **Testing**: Jest
 - **Containerization**: Docker
 
 ## Roadmap / Future Plans
 
-1. **Refactor to Clean Architecture**: Implement a more maintainable code structure with clear separation of concerns
-2. **Performance Optimizations**: Improve response times and reduce resource usage
-3. **Enhanced API Documentation**: Provide comprehensive API documentation
+1. **Microservices Architecture**: Modularize for scalability
+2. **Performance Optimizations**: Improve response times and resource usage
+3. **Enhanced API Documentation**: Provide comprehensive API docs
 
 ## Installation
 
@@ -46,7 +48,7 @@ npm install
 4. Start the development server:
 
 ```bash
-npm run dev
+npm run start:dev
 ```
 
 ## Building for Production
