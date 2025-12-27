@@ -10,7 +10,8 @@ export class AuthController {
   @Post('token/refresh')
   async refreshToken(@Body() body: RefreshTokenDto) {
     try {
-      return await this.authService.refreshToken(body.refreshToken);
+      const { idToken, refreshToken } = await this.authService.refreshToken(body.refreshToken);
+      return { data: { accessToken: idToken, refreshToken } };
     } catch (error) {
       logError('refreshToken', error);
       throw new InternalServerErrorException('Internal server error');

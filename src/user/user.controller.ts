@@ -1,5 +1,15 @@
 import type { Request } from 'express';
-import { Controller, Patch, Post, Body, InternalServerErrorException, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Patch,
+  Post,
+  Body,
+  InternalServerErrorException,
+  UseGuards,
+  Req,
+  BadRequestException,
+  HttpException,
+} from '@nestjs/common';
 
 import { logError } from '../shared/utils/systemUtils';
 import { AuthGuard } from '../auth/auth.guard';
@@ -15,9 +25,15 @@ export class UserController {
   @UseGuards(AuthGuard)
   async updateUser(@Req() req: Request, @Body() body: UpdateUserDto) {
     try {
-      return await this.userService.updateUser(req.user.user_id, body);
+      await this.userService.updateUser(req.user.user_id, body);
+      return { message: 'Success' };
     } catch (error) {
       logError('updateUser', error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException('Internal server error');
     }
   }
@@ -32,7 +48,9 @@ export class UserController {
         throw new BadRequestException('Bad request');
       }
 
-      return await this.userService.signInUser(userId, email, name, picture);
+      const { pictureUrl, lastUsedLanguageId } = await this.userService.signInUser(userId, email, name, picture);
+
+      return { data: { userId, email, name, pictureUrl, lastUsedLanguageId } };
     } catch (error) {
       logError('signInUser', error);
       throw new InternalServerErrorException('Internal server error');

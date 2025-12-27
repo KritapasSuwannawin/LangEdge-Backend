@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { Language } from '../infrastructure/database/entities/language.entity';
-
 import { LanguageController } from './language.controller';
 import { LanguageService } from './language.service';
 
+import { ENTITIES } from '../infrastructure/database/entities';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Language])],
+  imports: [TypeOrmModule.forFeature(ENTITIES)],
   controllers: [LanguageController],
   providers: [LanguageService],
 })

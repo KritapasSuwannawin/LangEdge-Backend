@@ -7,7 +7,7 @@ import { getLLM } from './llm-models';
 const defaultLLM = getLLM();
 
 @Injectable()
-export class LlmService {
+export class LLMService {
   async determineLanguageAndCategory(
     text: string,
     llm = defaultLLM,

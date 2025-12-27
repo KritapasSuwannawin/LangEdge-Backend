@@ -1,19 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
-import { LlmService } from './llm.service';
+
+import { LLMService } from './llm.service';
 import { getLLM } from './llm-models';
 
-describe('LlmService', () => {
-  let service: LlmService;
+import { APP_IMPORTS } from '../../app.imports';
+
+describe('LLMService', () => {
+  let service: LLMService;
   let defaultLLM: ReturnType<typeof getLLM>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot({ isGlobal: true })],
-      providers: [LlmService],
+      imports: [...APP_IMPORTS],
+      providers: [LLMService],
     }).compile();
 
-    service = module.get<LlmService>(LlmService);
+    service = module.get<LLMService>(LLMService);
 
     defaultLLM = getLLM();
   });

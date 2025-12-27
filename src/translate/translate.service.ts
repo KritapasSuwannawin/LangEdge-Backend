@@ -8,7 +8,7 @@ import { Synonym } from '../infrastructure/database/entities/synonym.entity';
 import { ExampleSentence } from '../infrastructure/database/entities/example-sentence.entity';
 
 import { logError } from '../shared/utils/systemUtils';
-import { LlmService } from '../infrastructure/services/llm.service';
+import { LLMService } from '../infrastructure/services/llm.service';
 
 import { GetTranslationDto } from './dto/get-translation.dto';
 
@@ -19,10 +19,19 @@ export class TranslateService {
     @InjectRepository(Translation) private readonly translationRepo: Repository<Translation>,
     @InjectRepository(Synonym) private readonly synonymRepo: Repository<Synonym>,
     @InjectRepository(ExampleSentence) private readonly exampleSentenceRepo: Repository<ExampleSentence>,
-    private readonly llmService: LlmService,
+    private readonly llmService: LLMService,
   ) {}
 
-  async getTranslation(query: GetTranslationDto) {
+  async getTranslation(query: GetTranslationDto): Promise<{
+    originalLanguageName: string;
+    inputTextSynonymArr?: string[];
+    translation: string;
+    translationSynonymArr?: string[];
+    exampleSentenceArr?: {
+      sentence: string;
+      translation: string;
+    }[];
+  }> {
     const { text, outputLanguageId } = query;
 
     // Fetch output language name and determine language/category via LLM
@@ -54,7 +63,7 @@ export class TranslateService {
 
     // If languages are the same, return input text
     if (originalLanguageName.toLowerCase() === outputLanguage.name.toLowerCase()) {
-      return { data: { originalLanguageName, translation: text } };
+      return { originalLanguageName, translation: text };
     }
 
     // Check if translation exists
@@ -71,7 +80,7 @@ export class TranslateService {
       const translation = existing.output_text;
 
       if (!isShortInputText) {
-        return { data: { originalLanguageName, translation } };
+        return { originalLanguageName, translation };
       }
 
       const [inputSyn, outputSyn, example] = await Promise.all([
@@ -95,13 +104,11 @@ export class TranslateService {
         }));
 
         return {
-          data: {
-            originalLanguageName,
-            inputTextSynonymArr: inputSyn.synonym_arr,
-            translation,
-            translationSynonymArr: outputSyn.synonym_arr,
-            exampleSentenceArr,
-          },
+          originalLanguageName,
+          inputTextSynonymArr: inputSyn.synonym_arr,
+          translation,
+          translationSynonymArr: outputSyn.synonym_arr,
+          exampleSentenceArr,
         };
       }
     }
@@ -166,6 +173,6 @@ export class TranslateService {
       }
     })();
 
-    return { data: { originalLanguageName, inputTextSynonymArr, translation, translationSynonymArr, exampleSentenceArr } };
+    return { originalLanguageName, inputTextSynonymArr, translation, translationSynonymArr, exampleSentenceArr };
   }
 }

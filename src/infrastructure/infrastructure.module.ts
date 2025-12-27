@@ -1,10 +1,9 @@
 import { App, cert, initializeApp, ServiceAccount } from 'firebase-admin/app';
-
 import { Module, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { FirebaseService } from './services/firebase.service';
-import { LlmService } from './services/llm.service';
+import { LLMService } from './services/llm.service';
 
 const FirebaseAppProvider: Provider<App> = {
   provide: 'FIREBASE_APP',
@@ -22,8 +21,7 @@ const FirebaseAppProvider: Provider<App> = {
 };
 
 @Module({
-  imports: [],
-  providers: [FirebaseAppProvider, FirebaseService, LlmService],
-  exports: [FirebaseService, LlmService],
+  providers: [FirebaseAppProvider, FirebaseService, LLMService],
+  exports: [FirebaseService, LLMService],
 })
 export class InfrastructureModule {}

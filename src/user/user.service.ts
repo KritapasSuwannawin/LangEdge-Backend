@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -12,39 +12,41 @@ export class UserService {
   constructor(@InjectRepository(User) private readonly userRepo: Repository<User>) {}
 
   async updateUser(userId: string, body: UpdateUserDto) {
-    await this.userRepo.update({ id: userId }, { last_used_language_id: body.lastUsedLanguageId });
-    return { message: 'User updated' };
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException('Bad request');
+    }
+
+    user.last_used_language_id = body.lastUsedLanguageId;
+    await this.userRepo.save(user);
   }
 
   async signInUser(userId: string, email: string, name: string, pictureUrl?: string) {
     let lastUsedLanguageId: number | undefined;
+    const existingUser = await this.userRepo.findOne({ where: { id: userId } });
 
-    try {
-      await this.userRepo.insert({ id: userId, email, name, picture_url: pictureUrl || null } as User);
-    } catch (err) {
-      // Constraint violation -> update existing instead
-      const updatePayload: Partial<User> = { email, name };
+    if (!existingUser) {
+      const saved = await this.userRepo.save(this.userRepo.create({ id: userId, email, name, picture_url: pictureUrl || null }));
+
+      if (saved.last_used_language_id) {
+        lastUsedLanguageId = saved.last_used_language_id;
+      }
+    } else {
+      existingUser.email = email;
+      existingUser.name = name;
 
       if (pictureUrl) {
-        updatePayload.picture_url = pictureUrl;
+        existingUser.picture_url = pictureUrl;
       }
 
-      await this.userRepo.update({ id: userId }, updatePayload);
+      const saved = await this.userRepo.save(existingUser);
 
-      const updated = await this.userRepo.findOne({ where: { id: userId }, select: { last_used_language_id: true } });
-      if (updated && updated.last_used_language_id) {
-        lastUsedLanguageId = updated.last_used_language_id;
+      if (saved.last_used_language_id) {
+        lastUsedLanguageId = saved.last_used_language_id;
       }
     }
 
-    return {
-      data: {
-        userId,
-        email,
-        name,
-        pictureUrl: pictureUrl ? await downloadFile(pictureUrl) : undefined,
-        lastUsedLanguageId,
-      },
-    };
+    return { pictureUrl: pictureUrl ? await downloadFile(pictureUrl) : undefined, lastUsedLanguageId };
   }
 }

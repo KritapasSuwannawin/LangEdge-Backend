@@ -1,5 +1,5 @@
 import { Controller, Get, Query, InternalServerErrorException, UseGuards } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 import { logError } from '../shared/utils/systemUtils';
 import { AuthGuard } from '../auth/auth.guard';
@@ -13,9 +13,12 @@ export class TranslateController {
 
   @Get()
   @UseGuards(ThrottlerGuard, AuthGuard)
+  @Throttle({ translate: { ttl: 60000, limit: 10 } })
   async getTranslation(@Query() query: GetTranslationDto) {
     try {
-      return await this.translateService.getTranslation(query);
+      const { originalLanguageName, inputTextSynonymArr, translation, translationSynonymArr, exampleSentenceArr } =
+        await this.translateService.getTranslation(query);
+      return { data: { originalLanguageName, inputTextSynonymArr, translation, translationSynonymArr, exampleSentenceArr } };
     } catch (error) {
       logError('getTranslation', error);
       throw new InternalServerErrorException('Internal server error');

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 
-import { InfrastructureModule } from '../infrastructure/infrastructure.module';
-
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
+
+import { InfrastructureModule } from '../infrastructure/infrastructure.module';
 
 @Module({
   imports: [InfrastructureModule],
