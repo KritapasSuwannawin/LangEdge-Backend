@@ -1,6 +1,9 @@
 # Stage 1: Build
 FROM node:22.16.0-alpine AS builder
 
+ARG OPENAI_API_KEY
+ENV OPENAI_API_KEY=$OPENAI_API_KEY
+
 WORKDIR /app
 
 COPY package*.json ./

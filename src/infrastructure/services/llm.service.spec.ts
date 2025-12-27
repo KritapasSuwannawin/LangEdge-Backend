@@ -1,9 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 
 import { LLMService } from './llm.service';
 import { getLLM } from './llm-models';
-
-import { APP_IMPORTS } from '../../app.imports';
 
 describe('LLMService', () => {
   let service: LLMService;
@@ -11,7 +10,7 @@ describe('LLMService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [...APP_IMPORTS],
+      imports: [ConfigModule.forRoot({ isGlobal: true })],
       providers: [LLMService],
     }).compile();
 
