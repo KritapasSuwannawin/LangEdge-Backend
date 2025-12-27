@@ -1,26 +1,22 @@
-import { Test, TestingModule } from '@nestjs/testing';
-
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-
-import { InfrastructureModule } from '../infrastructure/infrastructure.module';
-
-import { APP_IMPORTS } from '../app.imports';
 
 describe('AuthController', () => {
   let controller: AuthController;
+  const mockService: any = { refreshToken: jest.fn() };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [...APP_IMPORTS, InfrastructureModule],
-      controllers: [AuthController],
-      providers: [AuthService],
-    }).compile();
-
-    controller = module.get<AuthController>(AuthController);
+  beforeEach(() => {
+    mockService.refreshToken.mockReset();
+    controller = new AuthController(mockService as any);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  test('refreshToken returns data wrapper on success', async () => {
+    mockService.refreshToken.mockResolvedValue({ idToken: 'id', refreshToken: 'r' });
+    const res = await controller.refreshToken({ refreshToken: 'r' } as any);
+    expect(res).toEqual({ data: { accessToken: 'id', refreshToken: 'r' } });
+  });
+
+  test('refreshToken propagates errors as InternalServerErrorException', async () => {
+    mockService.refreshToken.mockRejectedValue(new Error('boom'));
+    await expect(controller.refreshToken({ refreshToken: 'r' } as any)).rejects.toThrow();
   });
 });

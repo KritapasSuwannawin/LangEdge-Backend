@@ -1,25 +1,26 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
-
 import { LanguageService } from './language.service';
-
-import { ENTITIES } from '../infrastructure/database/entities';
-
-import { APP_IMPORTS } from '../app.imports';
 
 describe('LanguageService', () => {
   let service: LanguageService;
+  const mockRepo: any = { find: jest.fn() };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [...APP_IMPORTS, TypeOrmModule.forFeature(ENTITIES)],
-      providers: [LanguageService],
-    }).compile();
-
-    service = module.get<LanguageService>(LanguageService);
+  beforeEach(() => {
+    mockRepo.find.mockReset();
+    service = new LanguageService(mockRepo as any);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  test('getLanguage with id calls find with where', async () => {
+    mockRepo.find.mockResolvedValue([{ id: 1, name: 'English' }]);
+
+    const res = await service.getLanguage(1);
+    expect(mockRepo.find).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(res).toEqual([{ id: 1, name: 'English' }]);
+  });
+
+  test('getLanguage without id calls find with no args', async () => {
+    mockRepo.find.mockResolvedValue([{ id: 1 }]);
+    const res = await service.getLanguage();
+    expect(mockRepo.find).toHaveBeenCalled();
+    expect(res).toEqual([{ id: 1 }]);
   });
 });

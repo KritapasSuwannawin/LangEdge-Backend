@@ -56,13 +56,13 @@ npm run start:dev
 Build the Docker container:
 
 ```bash
-./build.sh
+sh ./build.sh
 ```
 
 Run the Docker container:
 
 ```bash
-./run.sh
+sh ./run.sh
 ```
 
 ## Copyright

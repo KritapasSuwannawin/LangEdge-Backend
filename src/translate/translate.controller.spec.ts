@@ -1,28 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
-
 import { TranslateController } from './translate.controller';
-import { TranslateService } from './translate.service';
-
-import { InfrastructureModule } from '../infrastructure/infrastructure.module';
-import { ENTITIES } from '../infrastructure/database/entities';
-
-import { APP_IMPORTS } from '../app.imports';
 
 describe('TranslateController', () => {
   let controller: TranslateController;
+  const mockService: any = { getTranslation: jest.fn() };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [...APP_IMPORTS, TypeOrmModule.forFeature(ENTITIES), InfrastructureModule],
-      controllers: [TranslateController],
-      providers: [TranslateService],
-    }).compile();
-
-    controller = module.get<TranslateController>(TranslateController);
+  beforeEach(() => {
+    mockService.getTranslation.mockReset();
+    controller = new TranslateController(mockService as any);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  test('getTranslation returns wrapped data when service resolves', async () => {
+    mockService.getTranslation.mockResolvedValue({ translation: 'Hola' });
+    const res = await controller.getTranslation({ text: 'Hi', outputLanguageId: 2 } as any);
+    expect(mockService.getTranslation).toHaveBeenCalled();
+    expect(res).toEqual({ data: { translation: 'Hola' } });
   });
 });

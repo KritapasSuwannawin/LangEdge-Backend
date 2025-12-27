@@ -53,6 +53,11 @@ export class UserController {
       return { data: { userId, email, name, pictureUrl, lastUsedLanguageId } };
     } catch (error) {
       logError('signInUser', error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException('Internal server error');
     }
   }

@@ -1,24 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-
 import { AuthService } from './auth.service';
-
-import { InfrastructureModule } from '../infrastructure/infrastructure.module';
-
-import { APP_IMPORTS } from '../app.imports';
 
 describe('AuthService', () => {
   let service: AuthService;
+  const mockFirebase: any = { refreshToken: jest.fn() };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [...APP_IMPORTS, InfrastructureModule],
-      providers: [AuthService],
-    }).compile();
-
-    service = module.get<AuthService>(AuthService);
+  beforeEach(() => {
+    mockFirebase.refreshToken.mockReset();
+    service = new AuthService(mockFirebase as any);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  test('refreshToken forwards to FirebaseService', async () => {
+    mockFirebase.refreshToken.mockResolvedValue({ idToken: 'id', refreshToken: 'r' });
+    const res = await service.refreshToken('rt');
+    expect(mockFirebase.refreshToken).toHaveBeenCalledWith('rt');
+    expect(res).toEqual({ idToken: 'id', refreshToken: 'r' });
   });
 });

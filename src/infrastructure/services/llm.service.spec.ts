@@ -23,28 +23,28 @@ describe('LLMService', () => {
   jest.setTimeout(10000);
 
   describe('determineLanguageAndCategory', () => {
-    test('should correctly identify a single word in English', async () => {
+    test('determineLanguageAndCategory identifies a single word in English', async () => {
       const result = await service.determineLanguageAndCategory('Hello');
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('language', 'English');
       expect(result).toHaveProperty('category', 'Word');
     });
 
-    test('should correctly identify a phrase in English', async () => {
+    test('determineLanguageAndCategory identifies a phrase in English', async () => {
       const result = await service.determineLanguageAndCategory('A little boy');
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('language', 'English');
       expect(result).toHaveProperty('category', 'Phrase');
     });
 
-    test('should correctly identify a sentence in English', async () => {
+    test('determineLanguageAndCategory identifies a sentence in English', async () => {
       const result = await service.determineLanguageAndCategory('The quick brown fox jumps over the lazy dog.');
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('language', 'English');
       expect(result).toHaveProperty('category', 'Sentence');
     });
 
-    test('should correctly identify a paragraph in English', async () => {
+    test('determineLanguageAndCategory identifies a paragraph in English', async () => {
       const result = await service.determineLanguageAndCategory(
         `Language learning is a journey. It requires patience and consistent practice. Many people find it challenging, but the rewards of being able to communicate in another language make it worthwhile.`,
       );
@@ -53,32 +53,32 @@ describe('LLMService', () => {
       expect(result).toHaveProperty('category', 'Paragraph');
     });
 
-    test('should correctly identify text in a non-English language', async () => {
+    test('determineLanguageAndCategory identifies text in a non-English language', async () => {
       const result = await service.determineLanguageAndCategory('Bonjour');
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('language', 'French');
       expect(result).toHaveProperty('category', 'Word');
     });
 
-    test('should return error for meaningless input', async () => {
+    test('determineLanguageAndCategory returns an error for meaningless input', async () => {
       const result = await service.determineLanguageAndCategory('asdfghjkl qwertyuiop zxcvbnm');
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('errorMessage', 'Invalid input');
     });
 
-    test('should return error for random characters', async () => {
+    test('determineLanguageAndCategory returns an error for random characters', async () => {
       const result = await service.determineLanguageAndCategory('!@#$%^&*()_+');
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('errorMessage', 'Invalid input');
     });
 
-    test('should handle empty string input', async () => {
+    test('determineLanguageAndCategory handles empty string input', async () => {
       const result = await service.determineLanguageAndCategory('');
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('errorMessage', 'Invalid input');
     });
 
-    test('should return null when an error occurs', async () => {
+    test('determineLanguageAndCategory returns null when an error occurs', async () => {
       jest.spyOn(defaultLLM, 'call').mockImplementation(() => {
         throw new Error('Test error');
       });
@@ -89,7 +89,7 @@ describe('LLMService', () => {
   });
 
   describe('translateTextAndGenerateSynonyms', () => {
-    test('should translate text from English to Spanish without synonyms', async () => {
+    test('translateTextAndGenerateSynonyms translates text from English to Spanish without synonyms', async () => {
       const result = await service.translateTextAndGenerateSynonyms('Eat', false, 'English', 'Spanish');
       expect(result).not.toBeNull();
 
@@ -101,7 +101,7 @@ describe('LLMService', () => {
       expect(result!.synonyms.length).toBe(0);
     });
 
-    test('should translate text from English to Spanish with synonyms', async () => {
+    test('translateTextAndGenerateSynonyms translates text from English to Spanish with synonyms', async () => {
       const result = await service.translateTextAndGenerateSynonyms('Eat', true, 'English', 'Spanish');
       expect(result).not.toBeNull();
 
@@ -114,7 +114,7 @@ describe('LLMService', () => {
       expect(result!.synonyms.length).toBeLessThanOrEqual(5);
     });
 
-    test('should translate from Spanish to English without synonyms', async () => {
+    test('translateTextAndGenerateSynonyms translates from Spanish to English without synonyms', async () => {
       const result = await service.translateTextAndGenerateSynonyms('comer', false, 'Spanish', 'English');
       expect(result).not.toBeNull();
 
@@ -126,7 +126,7 @@ describe('LLMService', () => {
       expect(result!.synonyms.length).toBe(0);
     });
 
-    test('should translate from Spanish to English with synonyms', async () => {
+    test('translateTextAndGenerateSynonyms translates from Spanish to English with synonyms', async () => {
       const result = await service.translateTextAndGenerateSynonyms('comer', true, 'Spanish', 'English');
       expect(result).not.toBeNull();
 
@@ -139,7 +139,7 @@ describe('LLMService', () => {
       expect(result!.synonyms.length).toBeLessThanOrEqual(5);
     });
 
-    test('should return null when an error occurs', async () => {
+    test('translateTextAndGenerateSynonyms returns null when an error occurs', async () => {
       jest.spyOn(defaultLLM, 'call').mockImplementation(() => {
         throw new Error('Test error');
       });
@@ -150,7 +150,7 @@ describe('LLMService', () => {
   });
 
   describe('generateSynonyms', () => {
-    test('should generate synonyms for an English word', async () => {
+    test('generateSynonyms generates synonyms for an English word', async () => {
       const result = await service.generateSynonyms('Happy', 'English');
       expect(result).not.toBeNull();
       expect(Array.isArray(result)).toBe(true);
@@ -158,7 +158,7 @@ describe('LLMService', () => {
       expect(result!.length).toBeLessThanOrEqual(5);
     });
 
-    test('should generate synonyms for a non-English word', async () => {
+    test('generateSynonyms generates synonyms for a non-English word', async () => {
       const result = await service.generateSynonyms('heureux', 'French');
       expect(result).not.toBeNull();
       expect(Array.isArray(result)).toBe(true);
@@ -166,7 +166,7 @@ describe('LLMService', () => {
       expect(result!.length).toBeLessThanOrEqual(5);
     });
 
-    test('should return null when an error occurs', async () => {
+    test('generateSynonyms returns null when an error occurs', async () => {
       jest.spyOn(defaultLLM, 'call').mockImplementation(() => {
         throw new Error('Test error');
       });
@@ -177,7 +177,7 @@ describe('LLMService', () => {
   });
 
   describe('generateExampleSentences', () => {
-    test('should generate example sentences from English to Spanish', async () => {
+    test('generateExampleSentences generates example sentences from English to Spanish', async () => {
       const result = await service.generateExampleSentences('happy', 'English', 'Spanish');
       expect(result).not.toBeNull();
       expect(Array.isArray(result)).toBe(true);
@@ -193,7 +193,7 @@ describe('LLMService', () => {
       });
     });
 
-    test('should generate example sentences from Spanish to English', async () => {
+    test('generateExampleSentences generates example sentences from Spanish to English', async () => {
       const result = await service.generateExampleSentences('feliz', 'Spanish', 'English');
       expect(result).not.toBeNull();
       expect(Array.isArray(result)).toBe(true);
@@ -209,7 +209,7 @@ describe('LLMService', () => {
       });
     });
 
-    test('should return null when an error occurs', async () => {
+    test('generateExampleSentences returns null when an error occurs', async () => {
       jest.spyOn(defaultLLM, 'call').mockImplementation(() => {
         throw new Error('Test error');
       });

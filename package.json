@@ -14,7 +14,7 @@
     "test": "jest --maxWorkers=1",
     "test:watch": "jest --watch --maxWorkers=1",
     "test:cov": "jest --coverage --maxWorkers=1",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --maxWorkers=1",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --maxWorkers=1",
     "typeorm": "ts-node ./node_modules/typeorm/cli.js --dataSource ormconfig.ts",
     "migration:generate": "sh -c 'NAME=${npm_config_name:-migration}; npm run typeorm -- migration:generate src/infrastructure/database/migrations/$NAME'",
