@@ -1,1 +1,1 @@
-docker build -t langedge-backend .
+docker build --build-arg OPENAI_API_KEY="$OPENAI_API_KEY" -t langedge-backend .

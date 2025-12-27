@@ -2,7 +2,6 @@
 FROM node:22.16.0-alpine AS builder
 
 ARG OPENAI_API_KEY
-ENV OPENAI_API_KEY=$OPENAI_API_KEY
 
 WORKDIR /app
 
@@ -10,7 +9,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm test
+RUN OPENAI_API_KEY=$OPENAI_API_KEY npm test
 RUN npm run build
 
 RUN npm prune --production

@@ -29,12 +29,6 @@ LangEdge Backend provides the API services and server-side logic that powers the
 - **Testing**: Jest
 - **Containerization**: Docker
 
-## Roadmap / Future Plans
-
-1. **Microservices Architecture**: Modularize for scalability
-2. **Performance Optimizations**: Improve response times and resource usage
-3. **Enhanced API Documentation**: Provide comprehensive API docs
-
 ## Installation
 
 1. Clone the repository
@@ -45,6 +39,14 @@ npm install
 ```
 
 3. Set up environment variables
+
+```
+OPENAI_API_KEY="sk-..."
+DATABASE_CONNECTION_STRING="postgresql://..."
+FIREBASE_API_KEY="..."
+FIREBASE_SERVICE_ACCOUNT={...}
+```
+
 4. Start the development server:
 
 ```bash
@@ -53,16 +55,16 @@ npm run start:dev
 
 ## Building for Production
 
-Build the Docker container:
+Build the Docker image:
 
 ```bash
-sh ./build.sh
+OPENAI_API_KEY="sk-..." sh ./build.sh
 ```
 
 Run the Docker container:
 
 ```bash
-sh ./run.sh
+sh ./run.sh ${PORT}
 ```
 
 ## Copyright
