@@ -1,11 +1,12 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import morgan from 'morgan';
 
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';
+import { validationPipeConfig } from './shared/config/validation-pipe.config';
 
 import packageJson from '../package.json';
-import { AppModule } from './app.module';
 
 // Extend Express Request type globally
 declare global {
@@ -28,16 +29,7 @@ async function bootstrap() {
   });
 
   // Global validation for DTOs
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      stopAtFirstError: true,
-      validationError: { target: false, value: false },
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe(validationPipeConfig));
 
   // Use morgan for request logging
   app.use(
