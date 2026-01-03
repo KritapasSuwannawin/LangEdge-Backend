@@ -71,130 +71,7 @@ describe('TranslateController', () => {
       ],
       controllers: [TranslateController],
       providers: [
-        {
-          provide: TranslateService,
-          useFactory: (
-            languageRepo: Repository<Language>,
-            translationRepo: Repository<Translation>,
-            synonymRepo: Repository<Synonym>,
-            exampleSentenceRepo: Repository<ExampleSentence>,
-            llmService: typeof mockLLMService,
-          ) => {
-            return {
-              getTranslation: async (query: { text: string; outputLanguageId: number }) => {
-                const { text, outputLanguageId } = query;
-
-                const [[outputLanguage], languageAndCategory] = await Promise.all([
-                  languageRepo.find({ where: { id: outputLanguageId }, select: { name: true } }),
-                  llmService.determineLanguageAndCategory(text),
-                ]);
-
-                if (!outputLanguage) {
-                  const { BadRequestException } = require('@nestjs/common');
-                  throw new BadRequestException('Invalid output language');
-                }
-
-                if (!languageAndCategory) {
-                  throw new Error('Failed to determine language and category');
-                }
-
-                if ('errorMessage' in languageAndCategory) {
-                  const { BadRequestException } = require('@nestjs/common');
-                  throw new BadRequestException(languageAndCategory.errorMessage);
-                }
-
-                const { language: originalLanguageName, category } = languageAndCategory;
-                const isShortInputText = category === 'Word' || category === 'Phrase';
-
-                const originalLanguage = await languageRepo.findOne({
-                  where: { name: originalLanguageName },
-                  select: { id: true },
-                });
-                if (!originalLanguage) {
-                  const { BadRequestException } = require('@nestjs/common');
-                  throw new BadRequestException('Unsupported input language');
-                }
-
-                if (originalLanguageName.toLowerCase() === outputLanguage.name.toLowerCase()) {
-                  return { originalLanguageName, translation: text };
-                }
-
-                const existing = await translationRepo.findOne({
-                  where: {
-                    input_text: text,
-                    input_language_id: originalLanguage.id,
-                    output_language_id: outputLanguageId,
-                  },
-                  select: { output_text: true, id: true },
-                });
-
-                if (existing) {
-                  const translation = existing.output_text;
-
-                  if (!isShortInputText) {
-                    return { originalLanguageName, translation };
-                  }
-
-                  const [inputSyn, outputSyn, example] = await Promise.all([
-                    synonymRepo.findOne({ where: { text, language_id: originalLanguage.id }, select: { synonym_arr: true } }),
-                    synonymRepo.findOne({
-                      where: { text: translation, language_id: outputLanguageId },
-                      select: { synonym_arr: true },
-                    }),
-                    exampleSentenceRepo.findOne({
-                      where: { text, language_id: originalLanguage.id, output_language_id: outputLanguageId },
-                      select: { example_sentence_translation_id_arr: true },
-                    }),
-                  ]);
-
-                  if (inputSyn && outputSyn && example) {
-                    const ids = example.example_sentence_translation_id_arr;
-                    const exampleTranslations = await translationRepo.find({
-                      where: ids.map((id) => ({ id })),
-                      select: { input_text: true, output_text: true },
-                    });
-
-                    const exampleSentenceArr = exampleTranslations.map(({ input_text: sentence, output_text: t }) => ({
-                      sentence,
-                      translation: t,
-                    }));
-
-                    return {
-                      originalLanguageName,
-                      inputTextSynonymArr: inputSyn.synonym_arr,
-                      translation,
-                      translationSynonymArr: outputSyn.synonym_arr,
-                      exampleSentenceArr,
-                    };
-                  }
-                }
-
-                const [translatedTextAndSynonyms, inputTextSynonymArr, exampleSentenceArr] = await Promise.all([
-                  llmService.translateTextAndGenerateSynonyms(text, isShortInputText, originalLanguageName, outputLanguage.name),
-                  isShortInputText ? llmService.generateSynonyms(text, originalLanguageName) : Promise.resolve([]),
-                  isShortInputText
-                    ? llmService.generateExampleSentences(text, originalLanguageName, outputLanguage.name)
-                    : Promise.resolve([]),
-                ]);
-
-                if (!translatedTextAndSynonyms || !inputTextSynonymArr || !exampleSentenceArr) {
-                  throw new Error('Failed to translate text and generate synonyms');
-                }
-
-                const { translation, synonyms: translationSynonymArr } = translatedTextAndSynonyms;
-
-                return { originalLanguageName, inputTextSynonymArr, translation, translationSynonymArr, exampleSentenceArr };
-              },
-            };
-          },
-          inject: [
-            getRepositoryToken(Language),
-            getRepositoryToken(Translation),
-            getRepositoryToken(Synonym),
-            getRepositoryToken(ExampleSentence),
-            LLMService,
-          ],
-        },
+        TranslateService,
         {
           provide: LLMService,
           useValue: mockLLMService,
@@ -333,25 +210,23 @@ describe('TranslateController', () => {
       });
     });
 
-    it('should return 500 when output language does not exist', async () => {
+    it('should return 400 when output language does not exist', async () => {
       mockLLMService.determineLanguageAndCategory.mockResolvedValue({
         language: 'English',
         category: 'Word',
       });
 
-      // The mock service throws BadRequestException but it's caught and translated by controller
-      await request(app.getHttpServer()).get('/translation').query({ text: 'hello', outputLanguageId: 999 }).expect(500);
+      await request(app.getHttpServer()).get('/translation').query({ text: 'hello', outputLanguageId: 999 }).expect(400);
     });
 
-    it('should return 500 when LLM returns error message', async () => {
+    it('should return 400 when LLM returns error message', async () => {
       await languageRepository.save([{ name: 'Spanish', code: 'es' }]);
 
       mockLLMService.determineLanguageAndCategory.mockResolvedValue({
         errorMessage: 'Unable to determine language',
       });
 
-      // The mock service throws BadRequestException but due to how it's structured, it becomes 500
-      await request(app.getHttpServer()).get('/translation').query({ text: 'asdfghjkl', outputLanguageId: 1 }).expect(500);
+      await request(app.getHttpServer()).get('/translation').query({ text: 'asdfghjkl', outputLanguageId: 1 }).expect(400);
     });
 
     it('should return 400 when text is missing', async () => {

@@ -15,6 +15,10 @@ import { ENTITIES } from '../src/infrastructure/database/entities';
 
 import { validationPipeConfig } from '../src/shared/config/validation-pipe.config';
 
+jest.mock('../src/shared/utils/httpUtils', () => ({
+  downloadFile: jest.fn().mockResolvedValue('data:image/png;base64,mockImageData'),
+}));
+
 describe('UserController', () => {
   let app: INestApplication;
   let userRepository: Repository<User>;
@@ -53,48 +57,7 @@ describe('UserController', () => {
         TypeOrmModule.forFeature(ENTITIES),
       ],
       controllers: [UserController],
-      providers: [
-        {
-          provide: UserService,
-          useFactory: (userRepo: Repository<User>) => {
-            return {
-              updateUser: async (userId: string, body: { lastUsedLanguageId: number }) => {
-                const user = await userRepo.findOne({ where: { id: userId } });
-                if (!user) {
-                  const { BadRequestException } = require('@nestjs/common');
-                  throw new BadRequestException('User not found');
-                }
-                user.last_used_language_id = body.lastUsedLanguageId;
-                await userRepo.save(user);
-              },
-              signInUser: async (userId: string, email: string, name: string, pictureUrl?: string) => {
-                const existingUser = await userRepo.findOne({ where: { id: userId } });
-                let lastUsedLanguageId: number | undefined;
-
-                if (!existingUser) {
-                  const saved = await userRepo.save(userRepo.create({ id: userId, email, name, picture_url: pictureUrl || null }));
-                  if (saved.last_used_language_id) {
-                    lastUsedLanguageId = saved.last_used_language_id;
-                  }
-                } else {
-                  existingUser.email = email;
-                  existingUser.name = name;
-                  if (pictureUrl) {
-                    existingUser.picture_url = pictureUrl;
-                  }
-                  const saved = await userRepo.save(existingUser);
-                  if (saved.last_used_language_id) {
-                    lastUsedLanguageId = saved.last_used_language_id;
-                  }
-                }
-
-                return { pictureUrl, lastUsedLanguageId };
-              },
-            };
-          },
-          inject: [getRepositoryToken(User)],
-        },
-      ],
+      providers: [UserService],
     })
       .overrideGuard(AuthGuard)
       .useValue(mockAuthGuard)

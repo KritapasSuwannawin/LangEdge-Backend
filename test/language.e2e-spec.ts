@@ -35,22 +35,7 @@ describe('LanguageController', () => {
         TypeOrmModule.forFeature(ENTITIES),
       ],
       controllers: [LanguageController],
-      providers: [
-        {
-          provide: LanguageService,
-          useFactory: (languageRepo: Repository<Language>) => {
-            return {
-              getLanguage: async (id?: number) => {
-                if (id) {
-                  return await languageRepo.find({ where: { id } });
-                }
-                return languageRepo.find();
-              },
-            };
-          },
-          inject: [getRepositoryToken(Language)],
-        },
-      ],
+      providers: [LanguageService],
     }).compile();
 
     app = moduleFixture.createNestApplication();
