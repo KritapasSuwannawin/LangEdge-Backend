@@ -128,38 +128,25 @@ export class TranslateService {
 
     // isShortInputText && inputTextSynonym, translationSynonym, and exampleSentence exist -> Store output to database
     (async () => {
+      const storedEntityArr: (Translation | Synonym | ExampleSentence)[] = [];
+
       try {
         if (isShortInputText && inputTextSynonymArr.length && translationSynonymArr.length && exampleSentenceArr.length) {
           const exampleIds: number[] = [];
-          for (const { sentence, translation: t } of exampleSentenceArr) {
-            const rec = await this.translationRepo.save(
+          for (const { sentence, translation } of exampleSentenceArr) {
+            const translationEntity = await this.translationRepo.save(
               this.translationRepo.create({
                 input_text: sentence,
                 input_language_id: originalLanguage.id,
-                output_text: t,
+                output_text: translation,
                 output_language_id: outputLanguageId,
               }),
             );
-            exampleIds.push(rec.id);
+            exampleIds.push(translationEntity.id);
+            storedEntityArr.push(translationEntity);
           }
 
-          await this.translationRepo.save(
-            this.translationRepo.create({
-              input_text: text,
-              input_language_id: originalLanguage.id,
-              output_text: translation,
-              output_language_id: outputLanguageId,
-            }),
-          );
-
-          await this.synonymRepo.save(
-            this.synonymRepo.create({ text, synonym_arr: inputTextSynonymArr, language_id: originalLanguage.id }),
-          );
-          await this.synonymRepo.save(
-            this.synonymRepo.create({ text: translation, synonym_arr: translationSynonymArr, language_id: outputLanguageId }),
-          );
-
-          await this.exampleSentenceRepo.save(
+          const exampleSentenceEntity = await this.exampleSentenceRepo.save(
             this.exampleSentenceRepo.create({
               text,
               example_sentence_translation_id_arr: exampleIds,
@@ -167,9 +154,57 @@ export class TranslateService {
               output_language_id: outputLanguageId,
             }),
           );
+          storedEntityArr.push(exampleSentenceEntity);
+
+          const translationEntity = await this.translationRepo.save(
+            this.translationRepo.create({
+              input_text: text,
+              input_language_id: originalLanguage.id,
+              output_text: translation,
+              output_language_id: outputLanguageId,
+            }),
+          );
+          storedEntityArr.push(translationEntity);
+
+          try {
+            const synonymEntity = await this.synonymRepo.save(
+              this.synonymRepo.create({ text, synonym_arr: inputTextSynonymArr, language_id: originalLanguage.id }),
+            );
+            storedEntityArr.push(synonymEntity);
+          } catch (error) {
+            if (!error.message.includes('duplicate key value')) {
+              throw error;
+            }
+          }
+
+          try {
+            const synonymEntity = await this.synonymRepo.save(
+              this.synonymRepo.create({ text: translation, synonym_arr: translationSynonymArr, language_id: outputLanguageId }),
+            );
+            storedEntityArr.push(synonymEntity);
+          } catch (error) {
+            if (!error.message.includes('duplicate key value')) {
+              throw error;
+            }
+          }
         }
       } catch (error) {
         logError('storeOutput', error);
+
+        // Rollback
+        for (const entity of storedEntityArr) {
+          try {
+            if (entity instanceof Translation) {
+              await this.translationRepo.remove(entity);
+            } else if (entity instanceof Synonym) {
+              await this.synonymRepo.remove(entity);
+            } else if (entity instanceof ExampleSentence) {
+              await this.exampleSentenceRepo.remove(entity);
+            }
+          } catch (error) {
+            logError('rollbackStoreOutput', error);
+          }
+        }
       }
     })();
 
