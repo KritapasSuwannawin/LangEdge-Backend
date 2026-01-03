@@ -1,6 +1,6 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 
 import { Language } from '../infrastructure/database/entities/language.entity';
 import { Translation } from '../infrastructure/database/entities/translation.entity';
@@ -11,203 +11,83 @@ import { logError } from '../shared/utils/systemUtils';
 import { LLMService } from '../infrastructure/services/llm.service';
 
 import { GetTranslationDto } from './dto/get-translation.dto';
+import { TranslationResult, LanguageContext } from './types/translate.types';
+import { LanguageResolverHelper, TranslationCacheHelper } from './helpers';
 
 @Injectable()
 export class TranslateService {
+  private readonly languageResolver: LanguageResolverHelper;
+  private readonly translationCache: TranslationCacheHelper;
+
   constructor(
     @InjectRepository(Language) private readonly languageRepo: Repository<Language>,
     @InjectRepository(Translation) private readonly translationRepo: Repository<Translation>,
     @InjectRepository(Synonym) private readonly synonymRepo: Repository<Synonym>,
     @InjectRepository(ExampleSentence) private readonly exampleSentenceRepo: Repository<ExampleSentence>,
     private readonly llmService: LLMService,
-  ) {}
+    private readonly dataSource: DataSource,
+  ) {
+    this.languageResolver = new LanguageResolverHelper(this.languageRepo, this.llmService);
+    this.translationCache = new TranslationCacheHelper(this.translationRepo, this.synonymRepo, this.exampleSentenceRepo, this.dataSource);
+  }
 
-  async getTranslation(query: GetTranslationDto): Promise<{
-    originalLanguageName: string;
-    inputTextSynonymArr?: string[];
-    translation: string;
-    translationSynonymArr?: string[];
-    exampleSentenceArr?: {
-      sentence: string;
-      translation: string;
-    }[];
-  }> {
+  async getTranslation(query: GetTranslationDto): Promise<TranslationResult> {
     const { text, outputLanguageId } = query;
 
-    // Fetch output language name and determine language/category via LLM
-    const [[outputLanguage], languageAndCategory] = await Promise.all([
-      this.languageRepo.find({ where: { id: outputLanguageId }, select: { name: true } }),
-      this.llmService.determineLanguageAndCategory(text),
-    ]);
+    const { languageContext, isShortInputText } = await this.languageResolver.resolveLanguageContext(text, outputLanguageId);
+    const { originalLanguageName, outputLanguageName } = languageContext;
 
-    if (!outputLanguage) {
-      throw new BadRequestException('Bad request');
-    }
-
-    if (!languageAndCategory) {
-      throw new Error('Failed to determine language and category');
-    }
-
-    if ('errorMessage' in languageAndCategory) {
-      throw new BadRequestException(languageAndCategory.errorMessage);
-    }
-
-    const { language: originalLanguageName, category } = languageAndCategory;
-    const isShortInputText = category === 'Word' || category === 'Phrase';
-
-    // Get original language id
-    const originalLanguage = await this.languageRepo.findOne({ where: { name: originalLanguageName }, select: { id: true } });
-    if (!originalLanguage) {
-      throw new BadRequestException('Bad request');
-    }
-
-    // If languages are the same, return input text
-    if (originalLanguageName.toLowerCase() === outputLanguage.name.toLowerCase()) {
+    // If languages are the same, return input text as-is
+    if (originalLanguageName.toLowerCase() === outputLanguageName.toLowerCase()) {
       return { originalLanguageName, translation: text };
     }
 
-    // Check if translation exists
-    const existing = await this.translationRepo.findOne({
-      where: {
-        input_text: text,
-        input_language_id: originalLanguage.id,
-        output_language_id: outputLanguageId,
-      },
-      select: { output_text: true, id: true },
-    });
-
-    if (existing) {
-      const translation = existing.output_text;
-
-      if (!isShortInputText) {
-        return { originalLanguageName, translation };
-      }
-
-      const [inputSyn, outputSyn, example] = await Promise.all([
-        this.synonymRepo.findOne({ where: { text, language_id: originalLanguage.id }, select: { synonym_arr: true } }),
-        this.synonymRepo.findOne({ where: { text: translation, language_id: outputLanguageId }, select: { synonym_arr: true } }),
-        this.exampleSentenceRepo.findOne({
-          where: { text, language_id: originalLanguage.id, output_language_id: outputLanguageId },
-          select: { example_sentence_translation_id_arr: true },
-        }),
-      ]);
-
-      if (inputSyn && outputSyn && example) {
-        const exampleTranslations = await this.translationRepo.find({
-          where: example.example_sentence_translation_id_arr.map((id) => ({ id })),
-          select: { input_text: true, output_text: true },
-        });
-
-        const exampleSentenceArr = exampleTranslations.map(({ input_text: sentence, output_text: translation }) => ({
-          sentence,
-          translation,
-        }));
-
-        return {
-          originalLanguageName,
-          inputTextSynonymArr: inputSyn.synonym_arr,
-          translation,
-          translationSynonymArr: outputSyn.synonym_arr,
-          exampleSentenceArr,
-        };
-      }
+    // Try to find cached translation
+    const cachedResult = await this.translationCache.findCachedTranslation(text, languageContext, isShortInputText);
+    if (cachedResult) {
+      return cachedResult;
     }
 
-    // Generate via LLM
+    // Generate new translation via LLM
+    return this.generateAndCacheTranslation(text, languageContext, isShortInputText);
+  }
+
+  private async generateAndCacheTranslation(text: string, context: LanguageContext, isShortInputText: boolean): Promise<TranslationResult> {
+    const { originalLanguageName, outputLanguageName } = context;
+
     const [translatedTextAndSynonyms, inputTextSynonymArr, exampleSentenceArr] = await Promise.all([
-      this.llmService.translateTextAndGenerateSynonyms(text, isShortInputText, originalLanguageName, outputLanguage.name),
+      this.llmService.translateTextAndGenerateSynonyms(text, isShortInputText, originalLanguageName, outputLanguageName),
       isShortInputText ? this.llmService.generateSynonyms(text, originalLanguageName) : Promise.resolve([]),
-      isShortInputText ? this.llmService.generateExampleSentences(text, originalLanguageName, outputLanguage.name) : Promise.resolve([]),
+      isShortInputText ? this.llmService.generateExampleSentences(text, originalLanguageName, outputLanguageName) : Promise.resolve([]),
     ]);
 
-    if (!translatedTextAndSynonyms || !inputTextSynonymArr || !exampleSentenceArr) {
-      throw new Error('Failed to translate text and generate synonyms');
+    if (!translatedTextAndSynonyms) {
+      throw new Error('Failed to translate text');
     }
 
     const { translation, synonyms: translationSynonymArr } = translatedTextAndSynonyms;
 
-    // isShortInputText && inputTextSynonym, translationSynonym, and exampleSentence exist -> Store output to database
-    (async () => {
-      const storedEntityArr: (Translation | Synonym | ExampleSentence)[] = [];
+    // Normalize null values to empty arrays
+    const normalizedInputSynonyms = inputTextSynonymArr ?? [];
+    const normalizedExampleSentences = exampleSentenceArr ?? [];
 
-      try {
-        if (isShortInputText && inputTextSynonymArr.length && translationSynonymArr.length && exampleSentenceArr.length) {
-          const exampleIds: number[] = [];
-          for (const { sentence, translation } of exampleSentenceArr) {
-            const translationEntity = await this.translationRepo.save(
-              this.translationRepo.create({
-                input_text: sentence,
-                input_language_id: originalLanguage.id,
-                output_text: translation,
-                output_language_id: outputLanguageId,
-              }),
-            );
-            exampleIds.push(translationEntity.id);
-            storedEntityArr.push(translationEntity);
-          }
+    // Cache results in background (fire-and-forget)
+    this.translationCache
+      .cacheTranslationData(text, translation, context, {
+        inputTextSynonymArr: normalizedInputSynonyms,
+        translationSynonymArr,
+        exampleSentenceArr: normalizedExampleSentences,
+      })
+      .catch((error) => {
+        logError('cacheTranslationData', error);
+      });
 
-          const exampleSentenceEntity = await this.exampleSentenceRepo.save(
-            this.exampleSentenceRepo.create({
-              text,
-              example_sentence_translation_id_arr: exampleIds,
-              language_id: originalLanguage.id,
-              output_language_id: outputLanguageId,
-            }),
-          );
-          storedEntityArr.push(exampleSentenceEntity);
-
-          const translationEntity = await this.translationRepo.save(
-            this.translationRepo.create({
-              input_text: text,
-              input_language_id: originalLanguage.id,
-              output_text: translation,
-              output_language_id: outputLanguageId,
-            }),
-          );
-          storedEntityArr.push(translationEntity);
-
-          try {
-            const synonymEntity = await this.synonymRepo.save(
-              this.synonymRepo.create({ text, synonym_arr: inputTextSynonymArr, language_id: originalLanguage.id }),
-            );
-            storedEntityArr.push(synonymEntity);
-          } catch (error) {
-            if (!error.message.includes('duplicate key value')) {
-              throw error;
-            }
-          }
-
-          try {
-            const synonymEntity = await this.synonymRepo.save(
-              this.synonymRepo.create({ text: translation, synonym_arr: translationSynonymArr, language_id: outputLanguageId }),
-            );
-            storedEntityArr.push(synonymEntity);
-          } catch (error) {
-            if (!error.message.includes('duplicate key value')) {
-              throw error;
-            }
-          }
-        }
-      } catch (error) {
-        logError('storeOutput', error);
-
-        // Rollback
-        for (const entity of storedEntityArr) {
-          try {
-            if (entity instanceof Translation) {
-              await this.translationRepo.remove(entity);
-            } else if (entity instanceof Synonym) {
-              await this.synonymRepo.remove(entity);
-            } else if (entity instanceof ExampleSentence) {
-              await this.exampleSentenceRepo.remove(entity);
-            }
-          } catch (error) {
-            logError('rollbackStoreOutput', error);
-          }
-        }
-      }
-    })();
-
-    return { originalLanguageName, inputTextSynonymArr, translation, translationSynonymArr, exampleSentenceArr };
+    return {
+      originalLanguageName,
+      inputTextSynonymArr: isShortInputText ? normalizedInputSynonyms : undefined,
+      translation,
+      translationSynonymArr: isShortInputText ? translationSynonymArr : undefined,
+      exampleSentenceArr: isShortInputText ? normalizedExampleSentences : undefined,
+    };
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, InternalServerErrorException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, InternalServerErrorException, UseGuards, HttpException } from '@nestjs/common';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 import { logError } from '../shared/utils/systemUtils';
@@ -21,6 +21,11 @@ export class TranslateController {
       return { data: { originalLanguageName, inputTextSynonymArr, translation, translationSynonymArr, exampleSentenceArr } };
     } catch (error) {
       logError('getTranslation', error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException('Internal server error');
     }
   }

@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 
 import { TranslateService } from './translate.service';
 import { GetTranslationDto } from './dto/get-translation.dto';
@@ -19,6 +19,7 @@ describe('TranslateService', () => {
   let mockLLM: jest.Mocked<
     Pick<LLMService, 'determineLanguageAndCategory' | 'translateTextAndGenerateSynonyms' | 'generateSynonyms' | 'generateExampleSentences'>
   >;
+  let mockDataSource: jest.Mocked<Pick<DataSource, 'createQueryRunner'>>;
 
   beforeEach(() => {
     mockLanguageRepo = {
@@ -47,6 +48,18 @@ describe('TranslateService', () => {
       generateSynonyms: jest.fn(),
       generateExampleSentences: jest.fn(),
     };
+    mockDataSource = {
+      createQueryRunner: jest.fn().mockReturnValue({
+        connect: jest.fn(),
+        startTransaction: jest.fn(),
+        commitTransaction: jest.fn(),
+        rollbackTransaction: jest.fn(),
+        release: jest.fn(),
+        manager: {
+          save: jest.fn().mockImplementation((_, entity) => Promise.resolve({ id: 1, ...entity })),
+        },
+      }),
+    };
 
     service = new TranslateService(
       mockLanguageRepo as unknown as Repository<Language>,
@@ -54,6 +67,7 @@ describe('TranslateService', () => {
       mockSynonymRepo as unknown as Repository<Synonym>,
       mockExampleRepo as unknown as Repository<ExampleSentence>,
       mockLLM as unknown as LLMService,
+      mockDataSource as unknown as DataSource,
     );
   });
 
@@ -69,7 +83,7 @@ describe('TranslateService', () => {
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Word' });
 
       await expect(service.getTranslation(baseQuery)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(service.getTranslation(baseQuery)).rejects.toThrow('Bad request');
+      await expect(service.getTranslation(baseQuery)).rejects.toThrow('Invalid output language');
     });
 
     it('should throw BadRequestException when LLM returns errorMessage', async () => {
@@ -169,9 +183,7 @@ describe('TranslateService', () => {
       mockLLM.generateSynonyms.mockResolvedValue(['Hi']);
       mockLLM.generateExampleSentences.mockResolvedValue([]);
 
-      await expect(service.getTranslation({ text: 'Hello', outputLanguageId: 2 })).rejects.toThrow(
-        'Failed to translate text and generate synonyms',
-      );
+      await expect(service.getTranslation({ text: 'Hello', outputLanguageId: 2 })).rejects.toThrow('Failed to translate text');
     });
 
     it('should not generate synonyms for long text (Sentence/Paragraph)', async () => {

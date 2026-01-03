@@ -45,7 +45,7 @@ export class UserController {
       const { user_id: userId, email, name, picture } = req.user;
 
       if (!email) {
-        throw new BadRequestException('Bad request');
+        throw new BadRequestException('Email is required');
       }
 
       const { pictureUrl, lastUsedLanguageId } = await this.userService.signInUser(userId, email, name, picture);

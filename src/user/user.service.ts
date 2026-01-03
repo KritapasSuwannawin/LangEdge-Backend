@@ -15,7 +15,7 @@ export class UserService {
     const user = await this.userRepo.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new BadRequestException('Bad request');
+      throw new BadRequestException('User not found');
     }
 
     user.last_used_language_id = body.lastUsedLanguageId;

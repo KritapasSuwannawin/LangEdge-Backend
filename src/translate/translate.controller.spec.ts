@@ -1,4 +1,4 @@
-import { InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, HttpException, InternalServerErrorException } from '@nestjs/common';
 
 import { TranslateController } from './translate.controller';
 import { TranslateService } from './translate.service';
@@ -83,6 +83,20 @@ describe('TranslateController', () => {
       mockService.getTranslation.mockRejectedValue(new Error('LLM service unavailable'));
 
       await expect(controller.getTranslation(baseQuery)).rejects.toThrow(InternalServerErrorException);
+      await expect(controller.getTranslation(baseQuery)).rejects.toThrow('Internal server error');
+    });
+
+    it('should rethrow HttpException from service', async () => {
+      mockService.getTranslation.mockRejectedValue(new BadRequestException('Invalid language'));
+
+      await expect(controller.getTranslation(baseQuery)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(controller.getTranslation(baseQuery)).rejects.toThrow('Invalid language');
+    });
+
+    it('should throw InternalServerErrorException for non-HttpException errors', async () => {
+      mockService.getTranslation.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(controller.getTranslation(baseQuery)).rejects.toBeInstanceOf(InternalServerErrorException);
       await expect(controller.getTranslation(baseQuery)).rejects.toThrow('Internal server error');
     });
 

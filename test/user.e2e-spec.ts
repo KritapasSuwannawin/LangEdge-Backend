@@ -62,7 +62,7 @@ describe('UserController', () => {
                 const user = await userRepo.findOne({ where: { id: userId } });
                 if (!user) {
                   const { BadRequestException } = require('@nestjs/common');
-                  throw new BadRequestException('Bad request');
+                  throw new BadRequestException('User not found');
                 }
                 user.last_used_language_id = body.lastUsedLanguageId;
                 await userRepo.save(user);

@@ -91,7 +91,7 @@ describe('TranslateController', () => {
 
                 if (!outputLanguage) {
                   const { BadRequestException } = require('@nestjs/common');
-                  throw new BadRequestException('Bad request');
+                  throw new BadRequestException('Invalid output language');
                 }
 
                 if (!languageAndCategory) {
@@ -112,7 +112,7 @@ describe('TranslateController', () => {
                 });
                 if (!originalLanguage) {
                   const { BadRequestException } = require('@nestjs/common');
-                  throw new BadRequestException('Bad request');
+                  throw new BadRequestException('Unsupported input language');
                 }
 
                 if (originalLanguageName.toLowerCase() === outputLanguage.name.toLowerCase()) {

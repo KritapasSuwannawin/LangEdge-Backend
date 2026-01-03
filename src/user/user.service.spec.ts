@@ -46,7 +46,7 @@ describe('UserService', () => {
       const body: UpdateUserDto = { lastUsedLanguageId: 1 };
 
       await expect(service.updateUser('nonexistent-user', body)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(service.updateUser('nonexistent-user', body)).rejects.toThrow('Bad request');
+      await expect(service.updateUser('nonexistent-user', body)).rejects.toThrow('User not found');
       expect(mockRepo.save).not.toHaveBeenCalled();
     });
 

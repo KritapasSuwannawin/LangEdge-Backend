@@ -47,7 +47,7 @@ describe('UserController', () => {
       expect(result).toEqual({ message: 'Success' });
     });
 
-    it('should rethrow HttpException (e.g., BadRequestException) from service', async () => {
+    it('should rethrow HttpException from service', async () => {
       const req = createMockRequest('user-456');
       const body: UpdateUserDto = { lastUsedLanguageId: 99 };
       mockUserService.updateUser.mockRejectedValue(new BadRequestException('User not found'));
@@ -84,7 +84,7 @@ describe('UserController', () => {
       };
 
       await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toThrow('Bad request');
+      await expect(controller.signInUser(req as unknown as Request)).rejects.toThrow('Email is required');
     });
 
     it('should throw BadRequestException when email is empty string', async () => {
