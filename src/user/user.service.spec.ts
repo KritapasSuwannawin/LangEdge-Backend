@@ -1,13 +1,16 @@
-import { BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 
 import { UserService } from './user.service';
 import { User } from '../infrastructure/database/entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { NotFoundAppError } from '../shared/domain/errors/not-found-app-error';
+import { downloadFile } from '../shared/utils/httpUtils';
 
 jest.mock('../shared/utils/httpUtils', () => ({
-  downloadFile: jest.fn().mockResolvedValue(Buffer.from('img')),
+  downloadFile: jest.fn(),
 }));
+
+const downloadFileMock = jest.mocked(downloadFile);
 
 describe('UserService', () => {
   let service: UserService;
@@ -20,6 +23,7 @@ describe('UserService', () => {
       create: jest.fn(),
     };
     service = new UserService(mockRepo as unknown as Repository<User>);
+    downloadFileMock.mockResolvedValue('data:image/png;base64,mock-image');
   });
 
   afterEach(() => {
@@ -40,13 +44,18 @@ describe('UserService', () => {
       expect(existingUser.last_used_language_id).toBe(2);
     });
 
-    it('should throw BadRequestException when user is not found', async () => {
+    it('should throw NotFoundAppError when user is not found', async () => {
       mockRepo.findOne.mockResolvedValue(null);
 
       const body: UpdateUserDto = { lastUsedLanguageId: 1 };
+      const result = service.updateUser('nonexistent-user', body);
 
-      await expect(service.updateUser('nonexistent-user', body)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(service.updateUser('nonexistent-user', body)).rejects.toThrow('User not found');
+      await expect(result).rejects.toBeInstanceOf(NotFoundAppError);
+      await expect(result).rejects.toMatchObject({
+        code: 'USER_NOT_FOUND',
+        publicMessage: 'User not found',
+        statusCode: 404,
+      });
       expect(mockRepo.save).not.toHaveBeenCalled();
     });
 
@@ -75,8 +84,7 @@ describe('UserService', () => {
 
   describe('signInUser', () => {
     it('should create new user and return picture data when user does not exist', async () => {
-      const { downloadFile } = require('../shared/utils/httpUtils');
-      downloadFile.mockResolvedValue(Buffer.from('downloaded-image'));
+      downloadFileMock.mockResolvedValue('data:image/png;base64,downloaded-image');
 
       mockRepo.findOne.mockResolvedValue(null);
       mockRepo.create.mockReturnValue({ id: 'new-user', email: 'new@example.com', name: 'New User' } as User);
@@ -92,14 +100,13 @@ describe('UserService', () => {
         picture_url: 'http://picture.url',
       });
       expect(mockRepo.save).toHaveBeenCalled();
-      expect(downloadFile).toHaveBeenCalledWith('http://picture.url');
+      expect(downloadFileMock).toHaveBeenCalledWith('http://picture.url');
       expect(result.lastUsedLanguageId).toBe(5);
-      expect(result.pictureUrl).toBeDefined();
+      expect(result.pictureUrl).toBe('data:image/png;base64,downloaded-image');
     });
 
     it('should update existing user and return picture data', async () => {
-      const { downloadFile } = require('../shared/utils/httpUtils');
-      downloadFile.mockResolvedValue(Buffer.from('updated-image'));
+      downloadFileMock.mockResolvedValue('data:image/png;base64,updated-image');
 
       const existingUser = { id: 'existing-user', email: 'old@example.com', name: 'Old Name' } as User;
       mockRepo.findOne.mockResolvedValue(existingUser);
@@ -112,7 +119,7 @@ describe('UserService', () => {
       expect(existingUser.picture_url).toBe('http://new-picture.url');
       expect(mockRepo.save).toHaveBeenCalled();
       expect(result.lastUsedLanguageId).toBe(10);
-      expect(result.pictureUrl).toBeDefined();
+      expect(result.pictureUrl).toBe('data:image/png;base64,updated-image');
     });
 
     it('should return undefined picture when no picture URL is provided for new user', async () => {
@@ -162,8 +169,7 @@ describe('UserService', () => {
     });
 
     it('should handle download errors gracefully', async () => {
-      const { downloadFile } = require('../shared/utils/httpUtils');
-      downloadFile.mockRejectedValue(new Error('Download failed'));
+      downloadFileMock.mockRejectedValue(new Error('Download failed'));
 
       mockRepo.findOne.mockResolvedValue(null);
       mockRepo.create.mockReturnValue({ id: 'download-fail', email: 'test@example.com', name: 'Test' } as User);

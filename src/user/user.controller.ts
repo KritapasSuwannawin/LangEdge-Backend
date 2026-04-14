@@ -1,21 +1,67 @@
 import type { Request } from 'express';
-import {
-  Controller,
-  Patch,
-  Post,
-  Body,
-  InternalServerErrorException,
-  UseGuards,
-  Req,
-  BadRequestException,
-  HttpException,
-} from '@nestjs/common';
+import { Body, Controller, Patch, Post, Req, UseGuards } from '@nestjs/common';
 
-import { logError } from '../shared/utils/systemUtils';
-import { AuthGuard } from '../auth/auth.guard';
+import { AuthGuard } from '@/auth/auth.guard';
+import { ValidationAppError } from '@/shared/domain/errors/validation-app-error';
+import { SignInUserResponseDto } from '@/user/dto/sign-in-user-response.dto';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import { UpdateUserResponseDto } from '@/user/dto/update-user-response.dto';
+import { mapSignInUserResponse, mapUpdateUserResponse } from '@/user/mappers/user-response.mapper';
+import { UserService } from '@/user/user.service';
 
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserService } from './user.service';
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
+};
+
+const isNonEmptyString = (value: unknown): value is string => {
+  return typeof value === 'string' && value.trim().length > 0;
+};
+
+const createMissingAuthContextError = (field: string, message: string): ValidationAppError => {
+  return new ValidationAppError({
+    publicMessage: message,
+    details: [{ field, message }],
+  });
+};
+
+const getRequestUserRecord = (requestUser: unknown): Record<string, unknown> => {
+  if (!isRecord(requestUser)) {
+    throw createMissingAuthContextError('user', 'Authenticated user context is required');
+  }
+
+  return requestUser;
+};
+
+const getRequiredAuthContextValue = (requestUser: Record<string, unknown>, field: string, message: string): string => {
+  const value = requestUser[field];
+
+  if (!isNonEmptyString(value)) {
+    throw createMissingAuthContextError(field, message);
+  }
+
+  return value;
+};
+
+const getUserIdFromAuthContext = (requestUser: Record<string, unknown>): string => {
+  const tokenUserId = requestUser['user_id'];
+  const uid = requestUser['uid'];
+
+  if (isNonEmptyString(tokenUserId)) {
+    return tokenUserId;
+  }
+
+  if (isNonEmptyString(uid)) {
+    return uid;
+  }
+
+  throw createMissingAuthContextError('userId', 'Authenticated user id is required');
+};
+
+const getOptionalAuthContextValue = (requestUser: Record<string, unknown>, field: string): string | undefined => {
+  const value = requestUser[field];
+
+  return isNonEmptyString(value) ? value : undefined;
+};
 
 @Controller('user')
 export class UserController {
@@ -23,42 +69,31 @@ export class UserController {
 
   @Patch()
   @UseGuards(AuthGuard)
-  async updateUser(@Req() req: Request, @Body() body: UpdateUserDto) {
-    try {
-      await this.userService.updateUser(req.user.user_id, body);
-      return { message: 'Success' };
-    } catch (error) {
-      logError('updateUser', error);
+  async updateUser(@Req() req: Request, @Body() body: UpdateUserDto): Promise<UpdateUserResponseDto> {
+    const requestUser = getRequestUserRecord(req.user);
+    const userId = getUserIdFromAuthContext(requestUser);
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
+    await this.userService.updateUser(userId, body);
 
-      throw new InternalServerErrorException('Internal server error');
-    }
+    return mapUpdateUserResponse();
   }
 
   @Post('sign-in')
   @UseGuards(AuthGuard)
-  async signInUser(@Req() req: Request) {
-    try {
-      const { user_id: userId, email, name, picture } = req.user;
+  async signInUser(@Req() req: Request): Promise<SignInUserResponseDto> {
+    const requestUser = getRequestUserRecord(req.user);
+    const userId = getUserIdFromAuthContext(requestUser);
+    const email = getRequiredAuthContextValue(requestUser, 'email', 'Email is required');
+    const name = getRequiredAuthContextValue(requestUser, 'name', 'Name is required');
+    const pictureUrl = getOptionalAuthContextValue(requestUser, 'picture');
+    const signInUserResult = await this.userService.signInUser(userId, email, name, pictureUrl);
 
-      if (!email) {
-        throw new BadRequestException('Email is required');
-      }
-
-      const { pictureUrl, lastUsedLanguageId } = await this.userService.signInUser(userId, email, name, picture);
-
-      return { data: { userId, email, name, pictureUrl, lastUsedLanguageId } };
-    } catch (error) {
-      logError('signInUser', error);
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Internal server error');
-    }
+    return mapSignInUserResponse({
+      userId,
+      email,
+      name,
+      pictureUrl: signInUserResult.pictureUrl,
+      lastUsedLanguageId: signInUserResult.lastUsedLanguageId,
+    });
   }
 }

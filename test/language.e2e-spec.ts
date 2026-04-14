@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
@@ -11,7 +11,7 @@ import { LanguageService } from '../src/language/language.service';
 import { Language } from '../src/infrastructure/database/entities/language.entity';
 import { ENTITIES } from '../src/infrastructure/database/entities';
 
-import { validationPipeConfig } from '../src/shared/config/validation-pipe.config';
+import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
 describe('LanguageController', () => {
   let app: INestApplication;
@@ -39,7 +39,7 @@ describe('LanguageController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe(validationPipeConfig));
+    applyHttpContractGlobals(app);
     await app.init();
 
     languageRepository = moduleFixture.get<Repository<Language>>(getRepositoryToken(Language));
@@ -119,7 +119,17 @@ describe('LanguageController', () => {
     });
 
     it('should return 400 when id is less than 1', async () => {
-      await request(app.getHttpServer()).get('/language?id=0').expect(400);
+      const response = await request(app.getHttpServer()).get('/language?id=0').expect(400);
+
+      expect(response.body).toEqual({
+        statusCode: 400,
+        message: 'Invalid input',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'id must not be less than 1',
+          details: [{ field: 'id', message: 'id must not be less than 1' }],
+        },
+      });
     });
 
     it('should return 400 when id is negative', async () => {

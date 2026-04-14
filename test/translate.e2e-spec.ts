@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
@@ -17,7 +17,7 @@ import { Synonym } from '../src/infrastructure/database/entities/synonym.entity'
 import { ExampleSentence } from '../src/infrastructure/database/entities/example-sentence.entity';
 import { ENTITIES } from '../src/infrastructure/database/entities';
 
-import { validationPipeConfig } from '../src/shared/config/validation-pipe.config';
+import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
 describe('TranslateController', () => {
   let app: INestApplication;
@@ -85,7 +85,7 @@ describe('TranslateController', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe(validationPipeConfig));
+    applyHttpContractGlobals(app);
     await app.init();
 
     languageRepository = moduleFixture.get<Repository<Language>>(getRepositoryToken(Language));
@@ -216,7 +216,16 @@ describe('TranslateController', () => {
         category: 'Word',
       });
 
-      await request(app.getHttpServer()).get('/translation').query({ text: 'hello', outputLanguageId: 999 }).expect(400);
+      const response = await request(app.getHttpServer()).get('/translation').query({ text: 'hello', outputLanguageId: 999 }).expect(400);
+
+      expect(response.body).toEqual({
+        statusCode: 400,
+        message: 'Invalid input',
+        error: {
+          code: 'INVALID_OUTPUT_LANGUAGE',
+          message: 'Invalid output language',
+        },
+      });
     });
 
     it('should return 400 when LLM returns error message', async () => {
@@ -230,7 +239,17 @@ describe('TranslateController', () => {
     });
 
     it('should return 400 when text is missing', async () => {
-      await request(app.getHttpServer()).get('/translation').query({ outputLanguageId: 1 }).expect(400);
+      const response = await request(app.getHttpServer()).get('/translation').query({ outputLanguageId: 1 }).expect(400);
+
+      expect(response.body).toMatchObject({
+        statusCode: 400,
+        message: 'Invalid input',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: expect.any(String),
+          details: expect.arrayContaining([expect.objectContaining({ field: 'text', message: expect.any(String) })]),
+        },
+      });
     });
 
     it('should return 400 when outputLanguageId is missing', async () => {
@@ -268,10 +287,19 @@ describe('TranslateController', () => {
 
       mockLLMService.translateTextAndGenerateSynonyms.mockResolvedValue(null);
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .get('/translation')
         .query({ text: 'This is a sentence.', outputLanguageId: spanish.id })
         .expect(500);
+
+      expect(response.body).toEqual({
+        statusCode: 500,
+        message: 'Internal server error',
+        error: {
+          code: 'TRANSLATION_FAILED',
+          message: 'Failed to translate text',
+        },
+      });
     });
 
     it('should translate sentence without synonyms and examples', async () => {

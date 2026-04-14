@@ -1,20 +1,18 @@
-import { Controller, Get, Query, InternalServerErrorException } from '@nestjs/common';
-import { GetLanguageDto } from './dto/get-language.dto';
-import { LanguageService } from './language.service';
-import { logError } from '../shared/utils/systemUtils';
+import { Controller, Get, Query } from '@nestjs/common';
+
+import { GetLanguageDto } from '@/language/dto/get-language.dto';
+import { GetLanguageResponseDto } from '@/language/dto/get-language-response.dto';
+import { mapGetLanguageResponse } from '@/language/mappers/language-response.mapper';
+import { LanguageService } from '@/language/language.service';
 
 @Controller('language')
 export class LanguageController {
   constructor(private readonly languageService: LanguageService) {}
 
   @Get()
-  async getLanguage(@Query() query: GetLanguageDto) {
-    try {
-      const languageArr = await this.languageService.getLanguage(query.id);
-      return { data: { languageArr } };
-    } catch (error) {
-      logError('getLanguage', error);
-      throw new InternalServerErrorException('Internal server error');
-    }
+  async getLanguage(@Query() query: GetLanguageDto): Promise<GetLanguageResponseDto> {
+    const languageArr = await this.languageService.getLanguage(query.id);
+
+    return mapGetLanguageResponse(languageArr);
   }
 }

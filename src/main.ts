@@ -1,10 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import morgan from 'morgan';
 
 import { logInfo } from '@/shared/utils/systemUtils';
 import { validationPipeConfig } from '@/shared/config/validation-pipe.config';
+import { GlobalExceptionFilter } from '@/shared/infrastructure/http/filters/global-exception.filter';
+import { ResponseEnvelopeInterceptor } from '@/shared/infrastructure/http/interceptors/response-envelope.interceptor';
 
 import { AppModule } from './app.module';
 
@@ -32,6 +35,8 @@ async function bootstrap() {
 
   // Global validation for DTOs
   app.useGlobalPipes(new ValidationPipe(validationPipeConfig));
+  app.useGlobalFilters(new GlobalExceptionFilter(app.get(HttpAdapterHost)));
+  app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 
   // Use morgan for request logging
   app.use(

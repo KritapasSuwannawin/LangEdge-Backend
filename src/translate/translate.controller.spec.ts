@@ -1,8 +1,7 @@
-import { BadRequestException, HttpException, InternalServerErrorException } from '@nestjs/common';
-
 import { TranslateController } from './translate.controller';
 import { TranslateService } from './translate.service';
 import { GetTranslationDto } from './dto/get-translation.dto';
+import { ValidationAppError } from '../shared/domain/errors/validation-app-error';
 
 describe('TranslateController', () => {
   let controller: TranslateController;
@@ -22,7 +21,7 @@ describe('TranslateController', () => {
   describe('getTranslation', () => {
     const baseQuery: GetTranslationDto = { text: 'Hello', outputLanguageId: 2 };
 
-    it('should return translation wrapped in data object when service resolves', async () => {
+    it('should return translation as a plain payload when service resolves', async () => {
       const mockResponse = {
         originalLanguageName: 'English',
         translation: 'Hola',
@@ -36,7 +35,7 @@ describe('TranslateController', () => {
 
       expect(mockService.getTranslation).toHaveBeenCalledWith(baseQuery);
       expect(mockService.getTranslation).toHaveBeenCalledTimes(1);
-      expect(result).toEqual({ data: mockResponse });
+      expect(result).toEqual(mockResponse);
     });
 
     it('should return minimal translation data without synonyms and examples', async () => {
@@ -49,10 +48,8 @@ describe('TranslateController', () => {
       const result = await controller.getTranslation(baseQuery);
 
       expect(result).toEqual({
-        data: {
-          originalLanguageName: 'English',
-          translation: 'Hola',
-        },
+        originalLanguageName: 'English',
+        translation: 'Hola',
       });
     });
 
@@ -72,32 +69,25 @@ describe('TranslateController', () => {
       const query: GetTranslationDto = { text: 'Eat', outputLanguageId: 2 };
       const result = await controller.getTranslation(query);
 
-      expect(result.data).toHaveProperty('originalLanguageName', 'English');
-      expect(result.data).toHaveProperty('translation', 'Comer');
-      expect(result.data.inputTextSynonymArr).toHaveLength(2);
-      expect(result.data.translationSynonymArr).toHaveLength(2);
-      expect(result.data.exampleSentenceArr).toHaveLength(2);
+      expect(result).toHaveProperty('originalLanguageName', 'English');
+      expect(result).toHaveProperty('translation', 'Comer');
+      expect(result.inputTextSynonymArr).toHaveLength(2);
+      expect(result.translationSynonymArr).toHaveLength(2);
+      expect(result.exampleSentenceArr).toHaveLength(2);
     });
 
-    it('should throw InternalServerErrorException when service throws an error', async () => {
-      mockService.getTranslation.mockRejectedValue(new Error('LLM service unavailable'));
+    it('should propagate app errors without controller translation', async () => {
+      const serviceError = new ValidationAppError({ publicMessage: 'Invalid input' });
+      mockService.getTranslation.mockRejectedValue(serviceError);
 
-      await expect(controller.getTranslation(baseQuery)).rejects.toThrow(InternalServerErrorException);
-      await expect(controller.getTranslation(baseQuery)).rejects.toThrow('Internal server error');
+      await expect(controller.getTranslation(baseQuery)).rejects.toBe(serviceError);
     });
 
-    it('should rethrow HttpException from service', async () => {
-      mockService.getTranslation.mockRejectedValue(new BadRequestException('Invalid language'));
+    it('should propagate unknown service errors without controller translation', async () => {
+      const serviceError = new Error('Database connection failed');
+      mockService.getTranslation.mockRejectedValue(serviceError);
 
-      await expect(controller.getTranslation(baseQuery)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(controller.getTranslation(baseQuery)).rejects.toThrow('Invalid language');
-    });
-
-    it('should throw InternalServerErrorException for non-HttpException errors', async () => {
-      mockService.getTranslation.mockRejectedValue(new Error('Database connection failed'));
-
-      await expect(controller.getTranslation(baseQuery)).rejects.toBeInstanceOf(InternalServerErrorException);
-      await expect(controller.getTranslation(baseQuery)).rejects.toThrow('Internal server error');
+      await expect(controller.getTranslation(baseQuery)).rejects.toBe(serviceError);
     });
 
     it('should handle long text translation', async () => {
@@ -114,7 +104,7 @@ describe('TranslateController', () => {
       const result = await controller.getTranslation(longTextQuery);
 
       expect(mockService.getTranslation).toHaveBeenCalledWith(longTextQuery);
-      expect(result.data.translation).toBeDefined();
+      expect(result.translation).toBeDefined();
     });
 
     it('should handle empty arrays for synonyms and examples', async () => {
@@ -129,9 +119,9 @@ describe('TranslateController', () => {
 
       const result = await controller.getTranslation({ text: 'Bonjour', outputLanguageId: 1 });
 
-      expect(result.data.inputTextSynonymArr).toEqual([]);
-      expect(result.data.translationSynonymArr).toEqual([]);
-      expect(result.data.exampleSentenceArr).toEqual([]);
+      expect(result.inputTextSynonymArr).toEqual([]);
+      expect(result.translationSynonymArr).toEqual([]);
+      expect(result.exampleSentenceArr).toEqual([]);
     });
 
     it('should propagate the exact response structure from service', async () => {
@@ -146,7 +136,7 @@ describe('TranslateController', () => {
 
       const result = await controller.getTranslation({ text: 'Hello', outputLanguageId: 4 });
 
-      expect(result.data).toEqual(mockResponse);
+      expect(result).toEqual(mockResponse);
     });
   });
 });

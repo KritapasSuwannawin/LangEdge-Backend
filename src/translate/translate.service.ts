@@ -9,6 +9,7 @@ import { ExampleSentence } from '../infrastructure/database/entities/example-sen
 
 import { logError } from '../shared/utils/systemUtils';
 import { LLMService } from '../infrastructure/services/llm.service';
+import { TranslationFailedError } from './domain/errors/translation-failed.error';
 
 import { GetTranslationDto } from './dto/get-translation.dto';
 import { TranslationResult, LanguageContext } from './types/translate.types';
@@ -62,7 +63,7 @@ export class TranslateService {
     ]);
 
     if (!translatedTextAndSynonyms) {
-      throw new Error('Failed to translate text');
+      throw new TranslationFailedError();
     }
 
     const { translation, synonyms: translationSynonymArr } = translatedTextAndSynonyms;

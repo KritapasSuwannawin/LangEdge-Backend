@@ -1,17 +1,13 @@
 import { Request } from 'express';
-import { BadRequestException, HttpException, InternalServerErrorException } from '@nestjs/common';
 
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { NotFoundAppError } from '../shared/domain/errors/not-found-app-error';
+import { ValidationAppError } from '../shared/domain/errors/validation-app-error';
 
 interface MockRequest {
-  user: {
-    user_id: string;
-    email?: string;
-    name?: string;
-    picture?: string;
-  };
+  user?: Record<string, unknown>;
 }
 
 describe('UserController', () => {
@@ -31,12 +27,12 @@ describe('UserController', () => {
   });
 
   describe('updateUser', () => {
-    const createMockRequest = (userId: string): MockRequest => ({
-      user: { user_id: userId },
+    const createMockRequest = (user: Record<string, unknown>): MockRequest => ({
+      user,
     });
 
     it('should return success message when user is updated successfully', async () => {
-      const req = createMockRequest('user-123');
+      const req = createMockRequest({ user_id: 'user-123' });
       const body: UpdateUserDto = { lastUsedLanguageId: 2 };
       mockUserService.updateUser.mockResolvedValue(undefined);
 
@@ -47,26 +43,37 @@ describe('UserController', () => {
       expect(result).toEqual({ message: 'Success' });
     });
 
-    it('should rethrow HttpException from service', async () => {
-      const req = createMockRequest('user-456');
-      const body: UpdateUserDto = { lastUsedLanguageId: 99 };
-      mockUserService.updateUser.mockRejectedValue(new BadRequestException('User not found'));
+    it('should fall back to uid when user_id is not present in auth context', async () => {
+      const req = createMockRequest({ uid: 'user-uid-123' });
+      const body: UpdateUserDto = { lastUsedLanguageId: 4 };
+      mockUserService.updateUser.mockResolvedValue(undefined);
 
-      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toThrow('User not found');
+      await controller.updateUser(req as unknown as Request, body);
+
+      expect(mockUserService.updateUser).toHaveBeenCalledWith('user-uid-123', body);
     });
 
-    it('should throw InternalServerErrorException for non-HttpException errors', async () => {
-      const req = createMockRequest('user-789');
-      const body: UpdateUserDto = { lastUsedLanguageId: 1 };
-      mockUserService.updateUser.mockRejectedValue(new Error('Database connection failed'));
+    it('should propagate service errors without controller translation', async () => {
+      const req = createMockRequest({ user_id: 'user-456' });
+      const body: UpdateUserDto = { lastUsedLanguageId: 99 };
+      const serviceError = new NotFoundAppError({ code: 'USER_NOT_FOUND', publicMessage: 'User not found' });
+      mockUserService.updateUser.mockRejectedValue(serviceError);
 
-      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toBeInstanceOf(InternalServerErrorException);
-      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toThrow('Internal server error');
+      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toBe(serviceError);
+    });
+
+    it('should throw ValidationAppError when auth context has no user id', async () => {
+      const req = createMockRequest({});
+      const body: UpdateUserDto = { lastUsedLanguageId: 1 };
+
+      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toBeInstanceOf(ValidationAppError);
+      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toMatchObject({
+        publicMessage: 'Authenticated user id is required',
+      });
     });
 
     it('should handle undefined lastUsedLanguageId', async () => {
-      const req = createMockRequest('user-abc');
+      const req = createMockRequest({ user_id: 'user-abc' });
       const body = {} as UpdateUserDto;
       mockUserService.updateUser.mockResolvedValue(undefined);
 
@@ -78,24 +85,25 @@ describe('UserController', () => {
   });
 
   describe('signInUser', () => {
-    it('should throw BadRequestException when email is missing', async () => {
+    it('should throw ValidationAppError when email is missing', async () => {
       const req: MockRequest = {
         user: { user_id: 'user-1', email: undefined, name: 'Test User' },
       };
 
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(BadRequestException);
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toThrow('Email is required');
+      await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(ValidationAppError);
+      await expect(controller.signInUser(req as unknown as Request)).rejects.toMatchObject({ publicMessage: 'Email is required' });
     });
 
-    it('should throw BadRequestException when email is empty string', async () => {
+    it('should throw ValidationAppError when name is missing', async () => {
       const req: MockRequest = {
-        user: { user_id: 'user-2', email: '', name: 'Test User' },
+        user: { user_id: 'user-2', email: 'test@example.com', name: undefined },
       };
 
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(ValidationAppError);
+      await expect(controller.signInUser(req as unknown as Request)).rejects.toMatchObject({ publicMessage: 'Name is required' });
     });
 
-    it('should return user data with picture when service succeeds', async () => {
+    it('should return user data as a plain payload when service succeeds', async () => {
       const req: MockRequest = {
         user: { user_id: 'user-3', email: 'test@example.com', name: 'Test User', picture: 'http://pic.url' },
       };
@@ -108,13 +116,11 @@ describe('UserController', () => {
 
       expect(mockUserService.signInUser).toHaveBeenCalledWith('user-3', 'test@example.com', 'Test User', 'http://pic.url');
       expect(result).toEqual({
-        data: {
-          userId: 'user-3',
-          email: 'test@example.com',
-          name: 'Test User',
-          pictureUrl: 'base64-encoded-picture',
-          lastUsedLanguageId: 5,
-        },
+        userId: 'user-3',
+        email: 'test@example.com',
+        name: 'Test User',
+        pictureUrl: 'base64-encoded-picture',
+        lastUsedLanguageId: 5,
       });
     });
 
@@ -131,33 +137,22 @@ describe('UserController', () => {
 
       expect(mockUserService.signInUser).toHaveBeenCalledWith('user-4', 'nopicture@example.com', 'No Picture User', undefined);
       expect(result).toEqual({
-        data: {
-          userId: 'user-4',
-          email: 'nopicture@example.com',
-          name: 'No Picture User',
-          pictureUrl: undefined,
-          lastUsedLanguageId: undefined,
-        },
+        userId: 'user-4',
+        email: 'nopicture@example.com',
+        name: 'No Picture User',
+        pictureUrl: undefined,
+        lastUsedLanguageId: undefined,
       });
     });
 
-    it('should rethrow HttpException from service', async () => {
+    it('should propagate service errors without controller translation', async () => {
       const req: MockRequest = {
         user: { user_id: 'user-5', email: 'error@example.com', name: 'Error User' },
       };
-      mockUserService.signInUser.mockRejectedValue(new BadRequestException('Service error'));
+      const serviceError = new Error('Service error');
+      mockUserService.signInUser.mockRejectedValue(serviceError);
 
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(HttpException);
-    });
-
-    it('should throw InternalServerErrorException for non-HttpException errors', async () => {
-      const req: MockRequest = {
-        user: { user_id: 'user-6', email: 'internal@example.com', name: 'Internal Error' },
-      };
-      mockUserService.signInUser.mockRejectedValue(new Error('Unexpected error'));
-
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(InternalServerErrorException);
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toThrow('Internal server error');
+      await expect(controller.signInUser(req as unknown as Request)).rejects.toBe(serviceError);
     });
 
     it('should handle user with all fields populated', async () => {
@@ -171,11 +166,11 @@ describe('UserController', () => {
 
       const result = await controller.signInUser(req as unknown as Request);
 
-      expect(result.data).toHaveProperty('userId', 'full-user');
-      expect(result.data).toHaveProperty('email', 'full@example.com');
-      expect(result.data).toHaveProperty('name', 'Full User');
-      expect(result.data).toHaveProperty('pictureUrl', 'full-picture-data');
-      expect(result.data).toHaveProperty('lastUsedLanguageId', 10);
+      expect(result).toHaveProperty('userId', 'full-user');
+      expect(result).toHaveProperty('email', 'full@example.com');
+      expect(result).toHaveProperty('name', 'Full User');
+      expect(result).toHaveProperty('pictureUrl', 'full-picture-data');
+      expect(result).toHaveProperty('lastUsedLanguageId', 10);
     });
   });
 });

@@ -1,7 +1,10 @@
-import { BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 
 import { Language } from '@/infrastructure/database/entities/language.entity';
+import { ValidationAppError } from '@/shared/domain/errors/validation-app-error';
+import { InvalidOutputLanguageError } from '@/translate/domain/errors/invalid-output-language.error';
+import { LanguageDetectionFailedError } from '@/translate/domain/errors/language-detection-failed.error';
+import { UnsupportedInputLanguageError } from '@/translate/domain/errors/unsupported-input-language.error';
 import { LLMService } from '@/infrastructure/services/llm.service';
 import { LanguageContext } from '@/translate/types/translate.types';
 
@@ -21,15 +24,18 @@ export class LanguageResolverHelper {
     ]);
 
     if (!outputLanguage) {
-      throw new BadRequestException('Invalid output language');
+      throw new InvalidOutputLanguageError();
     }
 
     if (!languageAndCategory) {
-      throw new Error('Failed to determine language and category');
+      throw new LanguageDetectionFailedError();
     }
 
     if ('errorMessage' in languageAndCategory) {
-      throw new BadRequestException(languageAndCategory.errorMessage);
+      throw new ValidationAppError({
+        publicMessage: languageAndCategory.errorMessage,
+        details: [{ field: 'text', message: languageAndCategory.errorMessage }],
+      });
     }
 
     const { language: originalLanguageName, category } = languageAndCategory;
@@ -41,7 +47,7 @@ export class LanguageResolverHelper {
     });
 
     if (!originalLanguage) {
-      throw new BadRequestException('Unsupported input language');
+      throw new UnsupportedInputLanguageError();
     }
 
     return {

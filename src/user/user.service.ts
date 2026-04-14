@@ -1,28 +1,36 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { downloadFile } from '../shared/utils/httpUtils';
-
-import { User } from '../infrastructure/database/entities/user.entity';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from '@/infrastructure/database/entities/user.entity';
+import { NotFoundAppError } from '@/shared/domain/errors/not-found-app-error';
+import { downloadFile } from '@/shared/utils/httpUtils';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
 @Injectable()
 export class UserService {
   constructor(@InjectRepository(User) private readonly userRepo: Repository<User>) {}
 
-  async updateUser(userId: string, body: UpdateUserDto) {
+  async updateUser(userId: string, body: UpdateUserDto): Promise<void> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new NotFoundAppError({
+        code: 'USER_NOT_FOUND',
+        publicMessage: 'User not found',
+      });
     }
 
     user.last_used_language_id = body.lastUsedLanguageId;
     await this.userRepo.save(user);
   }
 
-  async signInUser(userId: string, email: string, name: string, pictureUrl?: string) {
+  async signInUser(
+    userId: string,
+    email: string,
+    name: string,
+    pictureUrl?: string,
+  ): Promise<{ pictureUrl?: string; lastUsedLanguageId?: number }> {
     let lastUsedLanguageId: number | undefined;
     const existingUser = await this.userRepo.findOne({ where: { id: userId } });
 

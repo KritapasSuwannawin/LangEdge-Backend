@@ -1,5 +1,3 @@
-import { InternalServerErrorException } from '@nestjs/common';
-
 import { LanguageController } from './language.controller';
 import { LanguageService } from './language.service';
 import { GetLanguageDto } from './dto/get-language.dto';
@@ -20,31 +18,31 @@ describe('LanguageController', () => {
   });
 
   describe('getLanguage', () => {
-    it('should return all languages wrapped in data object when no id is provided', async () => {
+    it('should return all languages as a plain payload when no id is provided', async () => {
       const mockLanguages = [
-        { id: 1, name: 'English' },
-        { id: 2, name: 'Spanish' },
-        { id: 3, name: 'French' },
+        { id: 1, name: 'English', code: 'en' },
+        { id: 2, name: 'Spanish', code: 'es' },
+        { id: 3, name: 'French', code: 'fr' },
       ];
-      mockService.getLanguage.mockResolvedValue(mockLanguages as any);
+      mockService.getLanguage.mockResolvedValue(mockLanguages);
 
       const query: GetLanguageDto = {};
       const result = await controller.getLanguage(query);
 
       expect(mockService.getLanguage).toHaveBeenCalledWith(undefined);
       expect(mockService.getLanguage).toHaveBeenCalledTimes(1);
-      expect(result).toEqual({ data: { languageArr: mockLanguages } });
+      expect(result).toEqual({ languageArr: mockLanguages });
     });
 
     it('should return specific language when id is provided', async () => {
-      const mockLanguage = [{ id: 1, name: 'English' }];
-      mockService.getLanguage.mockResolvedValue(mockLanguage as any);
+      const mockLanguage = [{ id: 1, name: 'English', code: 'en' }];
+      mockService.getLanguage.mockResolvedValue(mockLanguage);
 
       const query: GetLanguageDto = { id: 1 };
       const result = await controller.getLanguage(query);
 
       expect(mockService.getLanguage).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ data: { languageArr: mockLanguage } });
+      expect(result).toEqual({ languageArr: mockLanguage });
     });
 
     it('should return empty array when no languages found', async () => {
@@ -53,42 +51,42 @@ describe('LanguageController', () => {
       const query: GetLanguageDto = { id: 999 };
       const result = await controller.getLanguage(query);
 
-      expect(result).toEqual({ data: { languageArr: [] } });
+      expect(result).toEqual({ languageArr: [] });
     });
 
-    it('should throw InternalServerErrorException when service throws an error', async () => {
-      mockService.getLanguage.mockRejectedValue(new Error('Database error'));
+    it('should propagate service errors without controller translation', async () => {
+      const serviceError = new Error('Database error');
+      mockService.getLanguage.mockRejectedValue(serviceError);
 
       const query: GetLanguageDto = {};
 
-      await expect(controller.getLanguage(query)).rejects.toThrow(InternalServerErrorException);
-      await expect(controller.getLanguage(query)).rejects.toThrow('Internal server error');
+      await expect(controller.getLanguage(query)).rejects.toBe(serviceError);
     });
 
     it('should handle numeric string id from query params', async () => {
-      const mockLanguage = [{ id: 2, name: 'Spanish' }];
-      mockService.getLanguage.mockResolvedValue(mockLanguage as any);
+      const mockLanguage = [{ id: 2, name: 'Spanish', code: 'es' }];
+      mockService.getLanguage.mockResolvedValue(mockLanguage);
 
       // Query params often come as strings and are transformed by DTO
       const query: GetLanguageDto = { id: 2 };
       const result = await controller.getLanguage(query);
 
       expect(mockService.getLanguage).toHaveBeenCalledWith(2);
-      expect(result).toEqual({ data: { languageArr: mockLanguage } });
+      expect(result).toEqual({ languageArr: mockLanguage });
     });
 
     it('should return multiple languages in correct order', async () => {
       const mockLanguages = [
-        { id: 1, name: 'English' },
-        { id: 2, name: 'Spanish' },
+        { id: 1, name: 'English', code: 'en' },
+        { id: 2, name: 'Spanish', code: 'es' },
       ];
-      mockService.getLanguage.mockResolvedValue(mockLanguages as any);
+      mockService.getLanguage.mockResolvedValue(mockLanguages);
 
       const result = await controller.getLanguage({});
 
-      expect(result.data.languageArr).toHaveLength(2);
-      expect(result.data.languageArr[0].id).toBe(1);
-      expect(result.data.languageArr[1].id).toBe(2);
+      expect(result.languageArr).toHaveLength(2);
+      expect(result.languageArr[0].id).toBe(1);
+      expect(result.languageArr[1].id).toBe(2);
     });
   });
 });

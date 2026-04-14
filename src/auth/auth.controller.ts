@@ -1,20 +1,18 @@
-import { Controller, Post, Body, InternalServerErrorException } from '@nestjs/common';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { AuthService } from './auth.service';
-import { logError } from '../shared/utils/systemUtils';
+import { Body, Controller, Post } from '@nestjs/common';
+
+import { AuthService } from '@/auth/auth.service';
+import { RefreshTokenDto } from '@/auth/dto/refresh-token.dto';
+import { RefreshTokenResponseDto } from '@/auth/dto/refresh-token-response.dto';
+import { mapRefreshTokenResponse } from '@/auth/mappers/auth-response.mapper';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('token/refresh')
-  async refreshToken(@Body() body: RefreshTokenDto) {
-    try {
-      const { idToken, refreshToken } = await this.authService.refreshToken(body.refreshToken);
-      return { data: { accessToken: idToken, refreshToken } };
-    } catch (error) {
-      logError('refreshToken', error);
-      throw new InternalServerErrorException('Internal server error');
-    }
+  async refreshToken(@Body() body: RefreshTokenDto): Promise<RefreshTokenResponseDto> {
+    const tokenResponse = await this.authService.refreshToken(body.refreshToken);
+
+    return mapRefreshTokenResponse(tokenResponse);
   }
 }

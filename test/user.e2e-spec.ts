@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, INestApplication, UnauthorizedException } from '@nestjs/common';
 import request from 'supertest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
@@ -13,7 +13,7 @@ import { User } from '../src/infrastructure/database/entities/user.entity';
 import { Language } from '../src/infrastructure/database/entities/language.entity';
 import { ENTITIES } from '../src/infrastructure/database/entities';
 
-import { validationPipeConfig } from '../src/shared/config/validation-pipe.config';
+import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
 jest.mock('../src/shared/utils/httpUtils', () => ({
   downloadFile: jest.fn().mockResolvedValue('data:image/png;base64,mockImageData'),
@@ -25,17 +25,24 @@ describe('UserController', () => {
   let languageRepository: Repository<Language>;
   let dataSource: DataSource;
 
-  const mockUser = {
+  const defaultUser = {
     user_id: 'test-user-id',
     email: 'test@example.com',
     name: 'Test User',
     picture: 'https://example.com/picture.jpg',
   };
 
+  let authenticatedUser: Record<string, unknown> = { ...defaultUser };
+  let shouldRejectAuthorization = false;
+
   const mockAuthGuard = {
     canActivate: (context: ExecutionContext) => {
+      if (shouldRejectAuthorization) {
+        throw new UnauthorizedException();
+      }
+
       const req = context.switchToHttp().getRequest();
-      req.user = mockUser;
+      req.user = authenticatedUser;
       return true;
     },
   };
@@ -64,7 +71,7 @@ describe('UserController', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe(validationPipeConfig));
+    applyHttpContractGlobals(app);
     await app.init();
 
     userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
@@ -79,6 +86,9 @@ describe('UserController', () => {
   });
 
   beforeEach(async () => {
+    authenticatedUser = { ...defaultUser };
+    shouldRejectAuthorization = false;
+
     // Clear all tables before each test
     await dataSource.synchronize(true);
   });
@@ -101,19 +111,42 @@ describe('UserController', () => {
 
       const response = await request(app.getHttpServer()).patch('/user').send({ lastUsedLanguageId: language.id }).expect(200);
 
-      expect(response.body).toEqual({ message: 'Success' });
+      expect(response.body).toEqual({
+        data: {
+          message: 'Success',
+        },
+      });
 
       // Verify user was updated
       const updatedUser = await userRepository.findOne({ where: { id: 'test-user-id' } });
       expect(updatedUser?.last_used_language_id).toBe(language.id);
     });
 
-    it('should return 400 when user does not exist', async () => {
-      await request(app.getHttpServer()).patch('/user').send({ lastUsedLanguageId: 1 }).expect(400);
+    it('should return 404 USER_NOT_FOUND when user does not exist', async () => {
+      const response = await request(app.getHttpServer()).patch('/user').send({ lastUsedLanguageId: 1 }).expect(404);
+
+      expect(response.body).toEqual({
+        statusCode: 404,
+        message: 'Not found',
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+        },
+      });
     });
 
     it('should return 400 when lastUsedLanguageId is missing', async () => {
-      await request(app.getHttpServer()).patch('/user').send({}).expect(400);
+      const response = await request(app.getHttpServer()).patch('/user').send({}).expect(400);
+
+      expect(response.body).toMatchObject({
+        statusCode: 400,
+        message: 'Invalid input',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: expect.any(String),
+          details: expect.arrayContaining([expect.objectContaining({ field: 'lastUsedLanguageId', message: expect.any(String) })]),
+        },
+      });
     });
 
     it('should return 400 when lastUsedLanguageId is invalid', async () => {
@@ -129,10 +162,13 @@ describe('UserController', () => {
     it('should sign in new user successfully', async () => {
       const response = await request(app.getHttpServer()).post('/user/sign-in').expect(201);
 
-      expect(response.body.data).toMatchObject({
-        userId: 'test-user-id',
-        email: 'test@example.com',
-        name: 'Test User',
+      expect(response.body).toEqual({
+        data: {
+          userId: 'test-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
+          pictureUrl: 'data:image/png;base64,mockImageData',
+        },
       });
 
       // Verify user was created
@@ -159,11 +195,14 @@ describe('UserController', () => {
 
       const response = await request(app.getHttpServer()).post('/user/sign-in').expect(201);
 
-      expect(response.body.data).toMatchObject({
-        userId: 'test-user-id',
-        email: 'test@example.com',
-        name: 'Test User',
-        lastUsedLanguageId: language.id,
+      expect(response.body).toEqual({
+        data: {
+          userId: 'test-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
+          pictureUrl: 'data:image/png;base64,mockImageData',
+          lastUsedLanguageId: language.id,
+        },
       });
 
       // Verify user was updated
@@ -172,59 +211,38 @@ describe('UserController', () => {
       expect(updatedUser?.name).toBe('Test User');
     });
 
-    it('should return 400 when email is missing from token', async () => {
-      const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [
-          ConfigModule.forRoot(),
-          TypeOrmModule.forRootAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-              type: 'postgres',
-              url: `${configService.get<string>('DATABASE_CONNECTION_STRING')}-e2e`,
-              entities: ENTITIES,
-              synchronize: true,
-            }),
-          }),
-          TypeOrmModule.forFeature(ENTITIES),
-        ],
-        controllers: [UserController],
-        providers: [
-          {
-            provide: UserService,
-            useValue: {
-              updateUser: jest.fn(),
-              signInUser: jest.fn(),
-            },
-          },
-        ],
-      })
-        .overrideGuard(AuthGuard)
-        .useValue({
-          canActivate: (context: ExecutionContext) => {
-            const req = context.switchToHttp().getRequest();
-            req.user = { user_id: 'test-user-id', name: 'Test User' }; // No email
-            return true;
-          },
-        })
-        .compile();
+    it('should return 401 UNAUTHORIZED when auth guard rejects the sign-in request', async () => {
+      shouldRejectAuthorization = true;
 
-      const testApp = moduleFixture.createNestApplication();
-      testApp.useGlobalPipes(
-        new ValidationPipe({
-          transform: true,
-          transformOptions: { enableImplicitConversion: true },
-          whitelist: true,
-          forbidNonWhitelisted: true,
-          stopAtFirstError: true,
-          validationError: { target: false, value: false },
-        }),
-      );
-      await testApp.init();
+      const response = await request(app.getHttpServer()).post('/user/sign-in').expect(401);
 
-      await request(testApp.getHttpServer()).post('/user/sign-in').expect(400);
+      expect(response.body).toEqual({
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+        },
+      });
+    });
 
-      await testApp.close();
+    it('should return 400 validation envelope when email is missing from auth context', async () => {
+      authenticatedUser = {
+        user_id: 'test-user-id',
+        name: 'Test User',
+      };
+
+      const response = await request(app.getHttpServer()).post('/user/sign-in').expect(400);
+
+      expect(response.body).toEqual({
+        statusCode: 400,
+        message: 'Invalid input',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Email is required',
+          details: [{ field: 'email', message: 'Email is required' }],
+        },
+      });
     });
   });
 });

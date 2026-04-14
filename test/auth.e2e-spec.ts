@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
 
-import { validationPipeConfig } from '../src/shared/config/validation-pipe.config';
+import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -26,7 +26,7 @@ describe('AuthController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe(validationPipeConfig));
+    applyHttpContractGlobals(app);
     await app.init();
   });
 
@@ -63,17 +63,51 @@ describe('AuthController', () => {
     });
 
     it('should return 400 when refreshToken is missing', async () => {
-      await request(app.getHttpServer()).post('/auth/token/refresh').send({}).expect(400);
+      const response = await request(app.getHttpServer()).post('/auth/token/refresh').send({}).expect(400);
+
+      expect(response.body).toMatchObject({
+        statusCode: 400,
+        message: 'Invalid input',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: expect.any(String),
+          details: expect.arrayContaining([expect.objectContaining({ field: 'refreshToken', message: expect.any(String) })]),
+        },
+      });
+      expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
     });
 
     it('should return 400 when refreshToken is empty', async () => {
-      await request(app.getHttpServer()).post('/auth/token/refresh').send({ refreshToken: '' }).expect(400);
+      const response = await request(app.getHttpServer()).post('/auth/token/refresh').send({ refreshToken: '' }).expect(400);
+
+      expect(response.body).toMatchObject({
+        statusCode: 400,
+        message: 'Invalid input',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: expect.any(String),
+          details: expect.arrayContaining([expect.objectContaining({ field: 'refreshToken', message: expect.any(String) })]),
+        },
+      });
+      expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
     });
 
     it('should return 500 when service throws error', async () => {
       mockAuthService.refreshToken.mockRejectedValue(new Error('Firebase error'));
 
-      await request(app.getHttpServer()).post('/auth/token/refresh').send({ refreshToken: 'invalid-refresh-token' }).expect(500);
+      const response = await request(app.getHttpServer())
+        .post('/auth/token/refresh')
+        .send({ refreshToken: 'invalid-refresh-token' })
+        .expect(500);
+
+      expect(response.body).toEqual({
+        statusCode: 500,
+        message: 'Internal server error',
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error',
+        },
+      });
     });
   });
 });
