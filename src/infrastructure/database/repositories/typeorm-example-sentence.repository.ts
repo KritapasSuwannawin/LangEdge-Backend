@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { ExampleSentence } from '@/infrastructure/database/entities/example-sentence.entity';
-import type { IExampleSentenceRepository, SaveExampleSentenceInput } from '@/repositories/i-example-sentence.repository';
+import type { IExampleSentenceRepository, SaveExampleSentenceInput } from '@/repositories/translate/i-example-sentence.repository';
 import type { ExampleSentenceRecord } from '@/domain/translate/example-sentence.record';
 
 @Injectable()

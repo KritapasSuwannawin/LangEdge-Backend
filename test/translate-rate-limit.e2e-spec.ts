@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerModule } from '@nestjs/throttler';
 import request from 'supertest';
 
-import { AuthGuard } from '../src/auth/auth.guard';
+import { AuthGuard } from '../src/modules/auth/auth.guard';
 import { TranslateController } from '../src/translate/translate.controller';
 import { TranslateService } from '../src/translate/translate.service';
 

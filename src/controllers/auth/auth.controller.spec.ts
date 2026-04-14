@@ -1,16 +1,18 @@
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+
 import { RefreshTokenDto } from '@/controllers/auth/dto/refresh-token.dto';
+import { RefreshTokenUseCase } from '@/use-cases/auth/refresh-token.use-case';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let mockService: jest.Mocked<Pick<AuthService, 'refreshToken'>>;
+  let mockRefreshTokenUseCase: jest.Mocked<Pick<RefreshTokenUseCase, 'execute'>>;
 
   beforeEach(() => {
-    mockService = {
-      refreshToken: jest.fn(),
+    mockRefreshTokenUseCase = {
+      execute: jest.fn(),
     };
-    controller = new AuthController(mockService as unknown as AuthService);
+
+    controller = new AuthController(mockRefreshTokenUseCase as unknown as RefreshTokenUseCase);
   });
 
   afterEach(() => {
@@ -22,12 +24,12 @@ describe('AuthController', () => {
 
     it('should return access token and refresh token as a plain payload on success', async () => {
       const mockTokenResponse = { idToken: 'new-id-token', refreshToken: 'new-refresh-token' };
-      mockService.refreshToken.mockResolvedValue(mockTokenResponse);
+      mockRefreshTokenUseCase.execute.mockResolvedValue(mockTokenResponse);
 
       const result = await controller.refreshToken(validDto);
 
-      expect(mockService.refreshToken).toHaveBeenCalledWith('valid-refresh-token');
-      expect(mockService.refreshToken).toHaveBeenCalledTimes(1);
+      expect(mockRefreshTokenUseCase.execute).toHaveBeenCalledWith({ refreshToken: 'valid-refresh-token' });
+      expect(mockRefreshTokenUseCase.execute).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
         accessToken: 'new-id-token',
         refreshToken: 'new-refresh-token',
@@ -35,14 +37,14 @@ describe('AuthController', () => {
     });
 
     it('should propagate service errors without controller translation', async () => {
-      const serviceError = new Error('Firebase error');
-      mockService.refreshToken.mockRejectedValue(serviceError);
+      const useCaseError = new Error('Firebase error');
+      mockRefreshTokenUseCase.execute.mockRejectedValue(useCaseError);
 
-      await expect(controller.refreshToken(validDto)).rejects.toBe(serviceError);
+      await expect(controller.refreshToken(validDto)).rejects.toBe(useCaseError);
     });
 
-    it('should handle empty refresh token from service response', async () => {
-      mockService.refreshToken.mockResolvedValue({ idToken: 'id', refreshToken: '' });
+    it('should handle empty refresh token from use case response', async () => {
+      mockRefreshTokenUseCase.execute.mockResolvedValue({ idToken: 'id', refreshToken: '' });
 
       const result = await controller.refreshToken(validDto);
 

@@ -5,9 +5,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 
-import { UserController } from '../src/user/user.controller';
-import { UserService } from '../src/user/user.service';
-import { AuthGuard } from '../src/auth/auth.guard';
+import { UserController } from '@/controllers/user/user.controller';
+import { SignInUserUseCase } from '../src/use-cases/user/sign-in-user.use-case';
+import { UpdateUserUseCase } from '../src/use-cases/user/update-user.use-case';
+import { TypeOrmUserRepository } from '../src/infrastructure/database/repositories/typeorm-user.repository';
+import { AuthGuard } from '../src/modules/auth/auth.guard';
 
 import { User } from '../src/infrastructure/database/entities/user.entity';
 import { Language } from '../src/infrastructure/database/entities/language.entity';
@@ -15,9 +17,9 @@ import { ENTITIES } from '../src/infrastructure/database/entities';
 
 import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
-jest.mock('../src/shared/utils/httpUtils', () => ({
-  downloadFile: jest.fn().mockResolvedValue('data:image/png;base64,mockImageData'),
-}));
+const mockFileDownloadPort = {
+  downloadAsBase64DataUrl: jest.fn().mockResolvedValue('data:image/png;base64,mockImageData'),
+};
 
 describe('UserController', () => {
   let app: INestApplication;
@@ -64,7 +66,12 @@ describe('UserController', () => {
         TypeOrmModule.forFeature(ENTITIES),
       ],
       controllers: [UserController],
-      providers: [UserService],
+      providers: [
+        SignInUserUseCase,
+        UpdateUserUseCase,
+        { provide: 'IUserRepository', useClass: TypeOrmUserRepository },
+        { provide: 'IFileDownloadPort', useValue: mockFileDownloadPort },
+      ],
     })
       .overrideGuard(AuthGuard)
       .useValue(mockAuthGuard)
@@ -88,6 +95,7 @@ describe('UserController', () => {
   beforeEach(async () => {
     authenticatedUser = { ...defaultUser };
     shouldRejectAuthorization = false;
+    mockFileDownloadPort.downloadAsBase64DataUrl.mockClear();
 
     // Clear all tables before each test
     await dataSource.synchronize(true);

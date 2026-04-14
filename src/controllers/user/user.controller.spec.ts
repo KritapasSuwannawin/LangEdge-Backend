@@ -1,10 +1,12 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 
 import { UserController } from './user.controller';
-import { UserService } from './user.service';
+
 import { UpdateUserDto } from '@/controllers/user/dto/update-user.dto';
 import { NotFoundAppError } from '@/domain/shared/errors/not-found-app-error';
 import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
+import { SignInUserUseCase } from '@/use-cases/user/sign-in-user.use-case';
+import { UpdateUserUseCase } from '@/use-cases/user/update-user.use-case';
 
 interface MockRequest {
   user?: Record<string, unknown>;
@@ -12,14 +14,16 @@ interface MockRequest {
 
 describe('UserController', () => {
   let controller: UserController;
-  let mockUserService: jest.Mocked<Pick<UserService, 'updateUser' | 'signInUser'>>;
+  let mockSignInUserUseCase: jest.Mocked<Pick<SignInUserUseCase, 'execute'>>;
+  let mockUpdateUserUseCase: jest.Mocked<Pick<UpdateUserUseCase, 'execute'>>;
 
   beforeEach(() => {
-    mockUserService = {
-      updateUser: jest.fn(),
-      signInUser: jest.fn(),
-    };
-    controller = new UserController(mockUserService as unknown as UserService);
+    mockSignInUserUseCase = { execute: jest.fn() };
+    mockUpdateUserUseCase = { execute: jest.fn() };
+    controller = new UserController(
+      mockSignInUserUseCase as unknown as SignInUserUseCase,
+      mockUpdateUserUseCase as unknown as UpdateUserUseCase,
+    );
   });
 
   afterEach(() => {
@@ -34,32 +38,32 @@ describe('UserController', () => {
     it('should return success message when user is updated successfully', async () => {
       const req = createMockRequest({ user_id: 'user-123' });
       const body: UpdateUserDto = { lastUsedLanguageId: 2 };
-      mockUserService.updateUser.mockResolvedValue(undefined);
+      mockUpdateUserUseCase.execute.mockResolvedValue(undefined);
 
       const result = await controller.updateUser(req as unknown as Request, body);
 
-      expect(mockUserService.updateUser).toHaveBeenCalledWith('user-123', { lastUsedLanguageId: 2 });
-      expect(mockUserService.updateUser).toHaveBeenCalledTimes(1);
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({ userId: 'user-123', lastUsedLanguageId: 2 });
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledTimes(1);
       expect(result).toEqual({ message: 'Success' });
     });
 
     it('should fall back to uid when user_id is not present in auth context', async () => {
       const req = createMockRequest({ uid: 'user-uid-123' });
       const body: UpdateUserDto = { lastUsedLanguageId: 4 };
-      mockUserService.updateUser.mockResolvedValue(undefined);
+      mockUpdateUserUseCase.execute.mockResolvedValue(undefined);
 
       await controller.updateUser(req as unknown as Request, body);
 
-      expect(mockUserService.updateUser).toHaveBeenCalledWith('user-uid-123', body);
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({ userId: 'user-uid-123', lastUsedLanguageId: 4 });
     });
 
-    it('should propagate service errors without controller translation', async () => {
+    it('should propagate use-case errors without controller translation', async () => {
       const req = createMockRequest({ user_id: 'user-456' });
       const body: UpdateUserDto = { lastUsedLanguageId: 99 };
-      const serviceError = new NotFoundAppError({ code: 'USER_NOT_FOUND', publicMessage: 'User not found' });
-      mockUserService.updateUser.mockRejectedValue(serviceError);
+      const useCaseError = new NotFoundAppError({ code: 'USER_NOT_FOUND', publicMessage: 'User not found' });
+      mockUpdateUserUseCase.execute.mockRejectedValue(useCaseError);
 
-      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toBe(serviceError);
+      await expect(controller.updateUser(req as unknown as Request, body)).rejects.toBe(useCaseError);
     });
 
     it('should throw ValidationAppError when auth context has no user id', async () => {
@@ -75,11 +79,11 @@ describe('UserController', () => {
     it('should handle undefined lastUsedLanguageId', async () => {
       const req = createMockRequest({ user_id: 'user-abc' });
       const body = {} as UpdateUserDto;
-      mockUserService.updateUser.mockResolvedValue(undefined);
+      mockUpdateUserUseCase.execute.mockResolvedValue(undefined);
 
       const result = await controller.updateUser(req as unknown as Request, body);
 
-      expect(mockUserService.updateUser).toHaveBeenCalledWith('user-abc', {});
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({ userId: 'user-abc', lastUsedLanguageId: undefined });
       expect(result).toEqual({ message: 'Success' });
     });
   });
@@ -87,7 +91,7 @@ describe('UserController', () => {
   describe('signInUser', () => {
     it('should throw ValidationAppError when email is missing', async () => {
       const req: MockRequest = {
-        user: { user_id: 'user-1', email: undefined, name: 'Test User' },
+        user: { user_id: 'user-1', name: 'Test User' },
       };
 
       await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(ValidationAppError);
@@ -96,25 +100,30 @@ describe('UserController', () => {
 
     it('should throw ValidationAppError when name is missing', async () => {
       const req: MockRequest = {
-        user: { user_id: 'user-2', email: 'test@example.com', name: undefined },
+        user: { user_id: 'user-2', email: 'test@example.com' },
       };
 
       await expect(controller.signInUser(req as unknown as Request)).rejects.toBeInstanceOf(ValidationAppError);
       await expect(controller.signInUser(req as unknown as Request)).rejects.toMatchObject({ publicMessage: 'Name is required' });
     });
 
-    it('should return user data as a plain payload when service succeeds', async () => {
+    it('should return user data as a plain payload when use-case succeeds', async () => {
       const req: MockRequest = {
         user: { user_id: 'user-3', email: 'test@example.com', name: 'Test User', picture: 'http://pic.url' },
       };
-      mockUserService.signInUser.mockResolvedValue({
+      mockSignInUserUseCase.execute.mockResolvedValue({
         pictureUrl: 'base64-encoded-picture',
         lastUsedLanguageId: 5,
       });
 
       const result = await controller.signInUser(req as unknown as Request);
 
-      expect(mockUserService.signInUser).toHaveBeenCalledWith('user-3', 'test@example.com', 'Test User', 'http://pic.url');
+      expect(mockSignInUserUseCase.execute).toHaveBeenCalledWith({
+        userId: 'user-3',
+        email: 'test@example.com',
+        name: 'Test User',
+        pictureUrl: 'http://pic.url',
+      });
       expect(result).toEqual({
         userId: 'user-3',
         email: 'test@example.com',
@@ -128,14 +137,19 @@ describe('UserController', () => {
       const req: MockRequest = {
         user: { user_id: 'user-4', email: 'nopicture@example.com', name: 'No Picture User' },
       };
-      mockUserService.signInUser.mockResolvedValue({
+      mockSignInUserUseCase.execute.mockResolvedValue({
         pictureUrl: undefined,
         lastUsedLanguageId: undefined,
       });
 
       const result = await controller.signInUser(req as unknown as Request);
 
-      expect(mockUserService.signInUser).toHaveBeenCalledWith('user-4', 'nopicture@example.com', 'No Picture User', undefined);
+      expect(mockSignInUserUseCase.execute).toHaveBeenCalledWith({
+        userId: 'user-4',
+        email: 'nopicture@example.com',
+        name: 'No Picture User',
+        pictureUrl: undefined,
+      });
       expect(result).toEqual({
         userId: 'user-4',
         email: 'nopicture@example.com',
@@ -145,21 +159,21 @@ describe('UserController', () => {
       });
     });
 
-    it('should propagate service errors without controller translation', async () => {
+    it('should propagate use-case errors without controller translation', async () => {
       const req: MockRequest = {
         user: { user_id: 'user-5', email: 'error@example.com', name: 'Error User' },
       };
-      const serviceError = new Error('Service error');
-      mockUserService.signInUser.mockRejectedValue(serviceError);
+      const useCaseError = new Error('Use-case error');
+      mockSignInUserUseCase.execute.mockRejectedValue(useCaseError);
 
-      await expect(controller.signInUser(req as unknown as Request)).rejects.toBe(serviceError);
+      await expect(controller.signInUser(req as unknown as Request)).rejects.toBe(useCaseError);
     });
 
     it('should handle user with all fields populated', async () => {
       const req: MockRequest = {
         user: { user_id: 'full-user', email: 'full@example.com', name: 'Full User', picture: 'http://full.pic' },
       };
-      mockUserService.signInUser.mockResolvedValue({
+      mockSignInUserUseCase.execute.mockResolvedValue({
         pictureUrl: 'full-picture-data',
         lastUsedLanguageId: 10,
       });

@@ -2,27 +2,23 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
-import { AuthController } from '../src/auth/auth.controller';
-import { AuthService } from '../src/auth/auth.service';
+import { AuthController } from '@/controllers/auth/auth.controller';
+import type { IAuthPort } from '@/domain/shared/ports/i-auth.port';
+import { RefreshTokenUseCase } from '@/use-cases/auth/refresh-token.use-case';
 
 import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
 describe('AuthController', () => {
   let app: INestApplication;
 
-  const mockAuthService = {
+  const mockAuthPort: jest.Mocked<Pick<IAuthPort, 'refreshToken'>> = {
     refreshToken: jest.fn(),
   };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        {
-          provide: AuthService,
-          useValue: mockAuthService,
-        },
-      ],
+      providers: [RefreshTokenUseCase, { provide: 'IAuthPort', useValue: mockAuthPort }],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -46,7 +42,7 @@ describe('AuthController', () => {
         idToken: 'new-id-token',
         refreshToken: 'new-refresh-token',
       };
-      mockAuthService.refreshToken.mockResolvedValue(mockResponse);
+      mockAuthPort.refreshToken.mockResolvedValue(mockResponse);
 
       const response = await request(app.getHttpServer())
         .post('/auth/token/refresh')
@@ -59,7 +55,7 @@ describe('AuthController', () => {
           refreshToken: 'new-refresh-token',
         },
       });
-      expect(mockAuthService.refreshToken).toHaveBeenCalledWith('valid-refresh-token');
+      expect(mockAuthPort.refreshToken).toHaveBeenCalledWith('valid-refresh-token');
     });
 
     it('should return 400 when refreshToken is missing', async () => {
@@ -74,7 +70,7 @@ describe('AuthController', () => {
           details: expect.arrayContaining([expect.objectContaining({ field: 'refreshToken', message: expect.any(String) })]),
         },
       });
-      expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
+      expect(mockAuthPort.refreshToken).not.toHaveBeenCalled();
     });
 
     it('should return 400 when refreshToken is empty', async () => {
@@ -89,11 +85,11 @@ describe('AuthController', () => {
           details: expect.arrayContaining([expect.objectContaining({ field: 'refreshToken', message: expect.any(String) })]),
         },
       });
-      expect(mockAuthService.refreshToken).not.toHaveBeenCalled();
+      expect(mockAuthPort.refreshToken).not.toHaveBeenCalled();
     });
 
     it('should return 500 when service throws error', async () => {
-      mockAuthService.refreshToken.mockRejectedValue(new Error('Firebase error'));
+      mockAuthPort.refreshToken.mockRejectedValue(new Error('Firebase error'));
 
       const response = await request(app.getHttpServer())
         .post('/auth/token/refresh')

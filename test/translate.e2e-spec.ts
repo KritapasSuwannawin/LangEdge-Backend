@@ -8,7 +8,7 @@ import { Repository, DataSource } from 'typeorm';
 
 import { TranslateController } from '../src/translate/translate.controller';
 import { TranslateService } from '../src/translate/translate.service';
-import { AuthGuard } from '../src/auth/auth.guard';
+import { AuthGuard } from '../src/modules/auth/auth.guard';
 import { LLMService } from '../src/infrastructure/services/llm.service';
 
 import { Language } from '../src/infrastructure/database/entities/language.entity';

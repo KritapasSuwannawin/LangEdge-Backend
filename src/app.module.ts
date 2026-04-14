@@ -3,10 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
 import { TranslateModule } from './translate/translate.module';
 import { LanguageModule } from './language/language.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 import { ENTITIES } from './infrastructure/database/entities';
 

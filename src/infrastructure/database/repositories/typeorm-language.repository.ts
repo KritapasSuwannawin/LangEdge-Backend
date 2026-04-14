@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Language } from '@/infrastructure/database/entities/language.entity';
-import type { ILanguageRepository } from '@/repositories/i-language.repository';
+import type { ILanguageRepository } from '@/repositories/language/i-language.repository';
 import type { LanguageRecord } from '@/domain/language/language.record';
 
 @Injectable()

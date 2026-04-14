@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Synonym } from '@/infrastructure/database/entities/synonym.entity';
-import type { ISynonymRepository, SaveSynonymInput } from '@/repositories/i-synonym.repository';
+import type { ISynonymRepository, SaveSynonymInput } from '@/repositories/translate/i-synonym.repository';
 import type { SynonymRecord } from '@/domain/translate/synonym.record';
 
 @Injectable()

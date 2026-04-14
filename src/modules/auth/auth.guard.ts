@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { FirebaseService } from '../infrastructure/services/firebase.service';
-import { extractBearerToken } from '../shared/utils/authUtils';
+import { FirebaseService } from '../../infrastructure/services/firebase.service';
+import { extractBearerToken } from '../../shared/utils/authUtils';
 import { Request } from 'express';
 
 @Injectable()
