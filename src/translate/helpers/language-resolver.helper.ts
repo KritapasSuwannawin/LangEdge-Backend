@@ -1,10 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 
-import { Language } from '../../infrastructure/database/entities/language.entity';
-import { LLMService } from '../../infrastructure/services/llm.service';
-
-import { LanguageContext } from '../types/translate.types';
+import { Language } from '@/infrastructure/database/entities/language.entity';
+import { LLMService } from '@/infrastructure/services/llm.service';
+import { LanguageContext } from '@/translate/types/translate.types';
 
 export class LanguageResolverHelper {
   constructor(

@@ -1,10 +1,9 @@
 import { DataSource, Repository } from 'typeorm';
 
-import { Translation } from '../../infrastructure/database/entities/translation.entity';
-import { Synonym } from '../../infrastructure/database/entities/synonym.entity';
-import { ExampleSentence } from '../../infrastructure/database/entities/example-sentence.entity';
-
-import { TranslationResult, LanguageContext, CacheData } from '../types/translate.types';
+import { ExampleSentence } from '@/infrastructure/database/entities/example-sentence.entity';
+import { Synonym } from '@/infrastructure/database/entities/synonym.entity';
+import { Translation } from '@/infrastructure/database/entities/translation.entity';
+import { CacheData, LanguageContext, TranslationResult } from '@/translate/types/translate.types';
 
 export class TranslationCacheHelper {
   constructor(
@@ -132,8 +131,7 @@ export class TranslationCacheHelper {
     try {
       await queryRunner.manager.save(Synonym, { text, synonym_arr: synonymArr, language_id: languageId });
     } catch (error) {
-      // Ignore duplicate key errors
-      if (!error.message?.includes('duplicate key value')) {
+      if (!(error instanceof Error) || !error.message.includes('duplicate key value')) {
         throw error;
       }
     }

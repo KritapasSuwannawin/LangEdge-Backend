@@ -1,7 +1,7 @@
 import zod from 'zod';
 import { Injectable } from '@nestjs/common';
 
-import { logError } from '../../shared/utils/systemUtils';
+import { logError } from '@/shared/utils/systemUtils';
 import { getLLM } from './llm-models';
 
 const defaultLLM = getLLM();

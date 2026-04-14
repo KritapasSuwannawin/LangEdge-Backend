@@ -1,7 +1,9 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { ZodType } from 'zod';
+
+import { logError } from '@/shared/utils/systemUtils';
+
 import { LLM } from './llm.interface';
-import { logError } from '../../../shared/utils/systemUtils';
 
 export default class BaseOpenAI implements LLM {
   llm: ChatOpenAI;
@@ -41,26 +43,20 @@ export default class BaseOpenAI implements LLM {
         }, timeout);
         timer.unref();
 
-        return await new Promise(async (resolve, reject) => {
-          try {
-            let answer: Record<string, unknown> | undefined;
+        let answer: Record<string, unknown> | undefined;
 
-            const stream = await this.llm.withStructuredOutput(structure, { strict: true }).stream(prompt, { signal: controller.signal });
+        const stream = await this.llm.withStructuredOutput(structure, { strict: true }).stream(prompt, { signal: controller.signal });
 
-            for await (const chunk of stream) {
-              streaming = true;
-              answer = chunk;
-            }
+        for await (const chunk of stream) {
+          streaming = true;
+          answer = chunk;
+        }
 
-            if (answer) {
-              resolve(answer);
-            } else {
-              reject(new Error('Answer is empty'));
-            }
-          } catch (err) {
-            reject(err);
-          }
-        });
+        if (answer) {
+          return answer;
+        }
+
+        throw new Error('Answer is empty');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         logError('callLLM', errorMessage);
@@ -77,5 +73,7 @@ export default class BaseOpenAI implements LLM {
         console.log('Retrying llm.stream()');
       }
     }
+
+    return;
   }
 }
