@@ -1,7 +1,7 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { ZodType } from 'zod';
 
-import { logError } from '@/shared/utils/systemUtils';
+import { logError, logWarn } from '@/shared/utils/systemUtils';
 
 import { LLM } from './llm.interface';
 
@@ -59,10 +59,12 @@ export default class BaseOpenAI implements LLM {
         throw new Error('Answer is empty');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logError('callLLM', errorMessage);
 
         availableCall--;
+
         if (availableCall === 0) {
+          logError('llm.call', error, { remainingAttempts: availableCall });
+
           if (errorMessage === 'Answer is empty') {
             return;
           }
@@ -70,7 +72,10 @@ export default class BaseOpenAI implements LLM {
           throw error;
         }
 
-        console.log('Retrying llm.stream()');
+        logWarn('llm.call.retry', 'Retrying LLM stream after failure', {
+          errorMessage,
+          remainingAttempts: availableCall,
+        });
       }
     }
 

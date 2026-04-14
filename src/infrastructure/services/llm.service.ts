@@ -1,7 +1,7 @@
 import zod from 'zod';
 import { Injectable } from '@nestjs/common';
 
-import { logError } from '@/shared/utils/systemUtils';
+import { logError, logInfo } from '@/shared/utils/systemUtils';
 import { getLLM } from './llm-models';
 
 const defaultLLM = getLLM();
@@ -51,13 +51,19 @@ Note:
         throw new Error('llmOutput is empty');
       }
 
-      console.log('determineLanguageAndCategory:', llmOutput);
-
-      return llmOutput.output as
+      const output = llmOutput.output as
         | { language: string; category: 'Word' | 'Phrase' | 'Sentence' | 'Paragraph' }
         | { errorMessage: 'Invalid input' };
+
+      logInfo(
+        'llm.determineLanguageAndCategory',
+        'Received structured LLM response',
+        'errorMessage' in output ? { isValidInput: false } : { isValidInput: true, language: output.language, category: output.category },
+      );
+
+      return output;
     } catch (err) {
-      logError('determineLanguageAndCategory', err);
+      logError('llm.determineLanguageAndCategory', err);
       return null;
     }
   }
@@ -104,12 +110,19 @@ Output format: ${isGenerateSynonyms ? '{ "translation": "...", "synonyms": [ ...
         throw new Error('llmOutput is empty');
       }
 
-      console.log('translateTextAndGenerateSynonyms:', llmOutput);
       const { translation, synonyms } = llmOutput as { translation: string; synonyms?: string[] };
+
+      logInfo('llm.translateTextAndGenerateSynonyms', 'Received structured LLM response', {
+        hasTranslation: translation.length > 0,
+        synonymCount: synonyms?.length ?? 0,
+        isGenerateSynonyms,
+        inputLanguage,
+        outputLanguage,
+      });
 
       return { translation, synonyms: synonyms ?? [] };
     } catch (err) {
-      logError('translateTextAndGenerateSynonyms', err);
+      logError('llm.translateTextAndGenerateSynonyms', err);
       return null;
     }
   }
@@ -152,12 +165,16 @@ Output requirements:
         throw new Error('llmOutput is empty');
       }
 
-      console.log('generateSynonyms:', llmOutput);
       const { synonyms } = llmOutput.output as { synonyms: string[] };
+
+      logInfo('llm.generateSynonyms', 'Received structured LLM response', {
+        synonymCount: synonyms.length,
+        language,
+      });
 
       return synonyms;
     } catch (err) {
-      logError('generateSynonyms', err);
+      logError('llm.generateSynonyms', err);
       return null;
     }
   }
@@ -202,11 +219,17 @@ Output format: [ { "sentence": "...", "translation": "..." }, ... ]`,
         throw new Error('llmOutput is empty');
       }
 
-      console.log('generateExampleSentences:', llmOutput);
+      const exampleSentences = llmOutput.output as { sentence: string; translation: string }[];
 
-      return llmOutput.output as { sentence: string; translation: string }[];
+      logInfo('llm.generateExampleSentences', 'Received structured LLM response', {
+        exampleCount: exampleSentences.length,
+        inputLanguage,
+        translationLanguage,
+      });
+
+      return exampleSentences;
     } catch (err) {
-      logError('generateExampleSentences', err);
+      logError('llm.generateExampleSentences', err);
       return null;
     }
   }

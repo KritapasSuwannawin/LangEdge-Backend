@@ -3,8 +3,10 @@ import { ValidationPipe } from '@nestjs/common';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import morgan from 'morgan';
 
+import { logInfo } from '@/shared/utils/systemUtils';
+import { validationPipeConfig } from '@/shared/config/validation-pipe.config';
+
 import { AppModule } from './app.module';
-import { validationPipeConfig } from './shared/config/validation-pipe.config';
 
 import packageJson from '../package.json';
 
@@ -37,7 +39,7 @@ async function bootstrap() {
       skip: (_req, res) => res.statusCode === 404,
       stream: {
         write: (message) => {
-          console.log(decodeURIComponent(message.trim()));
+          logInfo('http.request', decodeURIComponent(message.trim()));
         },
       },
     }),
@@ -46,6 +48,6 @@ async function bootstrap() {
   const port = Number(process.env.PORT ?? 8000);
 
   await app.listen(port);
-  console.log(`${packageJson.name} running on port ${port}...`);
+  logInfo('bootstrap.startup', `${packageJson.name} running on port ${port}`);
 }
 bootstrap();
