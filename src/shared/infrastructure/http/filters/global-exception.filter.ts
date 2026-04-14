@@ -2,7 +2,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Injec
 import { HttpAdapterHost } from '@nestjs/core';
 import { ThrottlerException } from '@nestjs/throttler';
 
-import { AppError } from '@/shared/domain/errors/app-error';
+import { AppError } from '@/domain/shared/errors/app-error';
 import { ApiErrorDetail } from '@/shared/infrastructure/http/contracts/api-error-detail';
 import { ApiErrorEnvelope } from '@/shared/infrastructure/http/contracts/api-error-envelope';
 import { logError, logWarn } from '@/shared/utils/systemUtils';

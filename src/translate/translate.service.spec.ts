@@ -1,18 +1,18 @@
 import { Repository, DataSource } from 'typeorm';
 
 import { TranslateService } from './translate.service';
-import { GetTranslationDto } from './dto/get-translation.dto';
+import { GetTranslationDto } from '@/controllers/translate/dto/get-translation.dto';
 
 import { Language } from '../infrastructure/database/entities/language.entity';
 import { Translation } from '../infrastructure/database/entities/translation.entity';
 import { Synonym } from '../infrastructure/database/entities/synonym.entity';
 import { ExampleSentence } from '../infrastructure/database/entities/example-sentence.entity';
 import { LLMService } from '../infrastructure/services/llm.service';
-import { ValidationAppError } from '../shared/domain/errors/validation-app-error';
-import { InvalidOutputLanguageError } from './domain/errors/invalid-output-language.error';
-import { LanguageDetectionFailedError } from './domain/errors/language-detection-failed.error';
-import { TranslationFailedError } from './domain/errors/translation-failed.error';
-import { UnsupportedInputLanguageError } from './domain/errors/unsupported-input-language.error';
+import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
+import { InvalidOutputLanguageError } from '@/domain/translate/errors/invalid-output-language.error';
+import { LanguageDetectionFailedError } from '@/domain/translate/errors/language-detection-failed.error';
+import { TranslationFailedError } from '@/domain/translate/errors/translation-failed.error';
+import { UnsupportedInputLanguageError } from '@/domain/translate/errors/unsupported-input-language.error';
 
 describe('TranslateService', () => {
   let service: TranslateService;

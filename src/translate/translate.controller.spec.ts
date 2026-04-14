@@ -1,7 +1,7 @@
 import { TranslateController } from './translate.controller';
 import { TranslateService } from './translate.service';
-import { GetTranslationDto } from './dto/get-translation.dto';
-import { ValidationAppError } from '../shared/domain/errors/validation-app-error';
+import { GetTranslationDto } from '@/controllers/translate/dto/get-translation.dto';
+import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
 
 describe('TranslateController', () => {
   let controller: TranslateController;

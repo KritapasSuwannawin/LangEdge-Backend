@@ -1,6 +1,6 @@
 import { LanguageController } from './language.controller';
 import { LanguageService } from './language.service';
-import { GetLanguageDto } from './dto/get-language.dto';
+import { GetLanguageDto } from '@/controllers/language/dto/get-language.dto';
 
 describe('LanguageController', () => {
   let controller: LanguageController;

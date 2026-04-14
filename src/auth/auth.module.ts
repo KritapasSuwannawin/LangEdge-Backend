@@ -4,10 +4,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 
-import { InfrastructureModule } from '../infrastructure/infrastructure.module';
+import { AuthInfraModule } from '@/infrastructure/auth/auth-infra.module';
 
 @Module({
-  imports: [InfrastructureModule],
+  imports: [AuthInfraModule],
   controllers: [AuthController],
   providers: [AuthService, AuthGuard],
   exports: [AuthGuard],

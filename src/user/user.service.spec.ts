@@ -2,8 +2,8 @@ import { Repository } from 'typeorm';
 
 import { UserService } from './user.service';
 import { User } from '../infrastructure/database/entities/user.entity';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { NotFoundAppError } from '../shared/domain/errors/not-found-app-error';
+import { UpdateUserDto } from '@/controllers/user/dto/update-user.dto';
+import { NotFoundAppError } from '@/domain/shared/errors/not-found-app-error';
 import { downloadFile } from '../shared/utils/httpUtils';
 
 jest.mock('../shared/utils/httpUtils', () => ({

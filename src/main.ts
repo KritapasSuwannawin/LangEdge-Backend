@@ -5,9 +5,9 @@ import { DecodedIdToken } from 'firebase-admin/auth';
 import morgan from 'morgan';
 
 import { logInfo } from '@/shared/utils/systemUtils';
-import { validationPipeConfig } from '@/shared/config/validation-pipe.config';
-import { GlobalExceptionFilter } from '@/shared/infrastructure/http/filters/global-exception.filter';
-import { ResponseEnvelopeInterceptor } from '@/shared/infrastructure/http/interceptors/response-envelope.interceptor';
+import { validationPipeConfig } from '@/infrastructure/config/validation-pipe.config';
+import { GlobalExceptionFilter } from '@/infrastructure/http/filters/global-exception.filter';
+import { ResponseEnvelopeInterceptor } from '@/infrastructure/http/interceptors/response-envelope.interceptor';
 
 import { AppModule } from './app.module';
 

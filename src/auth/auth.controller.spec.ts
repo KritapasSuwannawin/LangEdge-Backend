@@ -1,6 +1,6 @@
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RefreshTokenDto } from '@/controllers/auth/dto/refresh-token.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;

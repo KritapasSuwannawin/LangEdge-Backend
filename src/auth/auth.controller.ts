@@ -1,9 +1,9 @@
 import { Body, Controller, Post } from '@nestjs/common';
 
 import { AuthService } from '@/auth/auth.service';
-import { RefreshTokenDto } from '@/auth/dto/refresh-token.dto';
-import { RefreshTokenResponseDto } from '@/auth/dto/refresh-token-response.dto';
-import { mapRefreshTokenResponse } from '@/auth/mappers/auth-response.mapper';
+import { RefreshTokenDto } from '@/controllers/auth/dto/refresh-token.dto';
+import { RefreshTokenResponseDto } from '@/controllers/auth/dto/refresh-token-response.dto';
+import { mapRefreshTokenResponse } from '@/controllers/auth/mappers/auth-response.mapper';
 
 @Controller('auth')
 export class AuthController {

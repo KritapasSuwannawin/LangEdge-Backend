@@ -1,27 +1,11 @@
-import { App, cert, initializeApp, ServiceAccount } from 'firebase-admin/app';
-import { Module, Provider } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// Deprecated for direct use. Feature modules should import AuthInfraModule or LLMInfraModule instead.
+import { Module } from '@nestjs/common';
 
-import { FirebaseService } from './services/firebase.service';
-import { LLMService } from './services/llm.service';
-
-const FirebaseAppProvider: Provider<App> = {
-  provide: 'FIREBASE_APP',
-  inject: [ConfigService],
-  useFactory: (configService: ConfigService) => {
-    const json = configService.get<string>('FIREBASE_SERVICE_ACCOUNT');
-
-    if (!json) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT is not set');
-    }
-
-    const serviceAccount = JSON.parse(json) as ServiceAccount;
-    return initializeApp({ credential: cert(serviceAccount) });
-  },
-};
+import { AuthInfraModule } from './auth/auth-infra.module';
+import { LLMInfraModule } from './llm/llm-infra.module';
 
 @Module({
-  providers: [FirebaseAppProvider, FirebaseService, LLMService],
-  exports: [FirebaseService, LLMService],
+  imports: [AuthInfraModule, LLMInfraModule],
+  exports: [AuthInfraModule, LLMInfraModule],
 })
 export class InfrastructureModule {}

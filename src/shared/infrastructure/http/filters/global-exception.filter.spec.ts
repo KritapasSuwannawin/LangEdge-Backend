@@ -2,8 +2,8 @@ import { ArgumentsHost, BadRequestException, HttpStatus, UnauthorizedException }
 import { HttpAdapterHost } from '@nestjs/core';
 import { ThrottlerException } from '@nestjs/throttler';
 
-import { NotFoundAppError } from '@/shared/domain/errors/not-found-app-error';
-import { ValidationAppError } from '@/shared/domain/errors/validation-app-error';
+import { NotFoundAppError } from '@/domain/shared/errors/not-found-app-error';
+import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
 import { ApiErrorEnvelope } from '@/shared/infrastructure/http/contracts/api-error-envelope';
 import { GlobalExceptionFilter } from '@/shared/infrastructure/http/filters/global-exception.filter';
 import { logError, logWarn } from '@/shared/utils/systemUtils';

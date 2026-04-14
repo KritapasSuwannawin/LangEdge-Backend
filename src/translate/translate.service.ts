@@ -9,9 +9,9 @@ import { ExampleSentence } from '../infrastructure/database/entities/example-sen
 
 import { logError } from '../shared/utils/systemUtils';
 import { LLMService } from '../infrastructure/services/llm.service';
-import { TranslationFailedError } from './domain/errors/translation-failed.error';
+import { TranslationFailedError } from '@/domain/translate/errors/translation-failed.error';
 
-import { GetTranslationDto } from './dto/get-translation.dto';
+import { GetTranslationDto } from '@/controllers/translate/dto/get-translation.dto';
 import { TranslationResult, LanguageContext } from './types/translate.types';
 import { LanguageResolverHelper, TranslationCacheHelper } from './helpers';
 

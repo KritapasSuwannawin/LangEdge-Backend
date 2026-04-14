@@ -2,10 +2,10 @@ import { Repository } from 'typeorm';
 
 import { Language } from '@/infrastructure/database/entities/language.entity';
 import { LLMService } from '@/infrastructure/services/llm.service';
-import { ValidationAppError } from '@/shared/domain/errors/validation-app-error';
-import { InvalidOutputLanguageError } from '@/translate/domain/errors/invalid-output-language.error';
-import { LanguageDetectionFailedError } from '@/translate/domain/errors/language-detection-failed.error';
-import { UnsupportedInputLanguageError } from '@/translate/domain/errors/unsupported-input-language.error';
+import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
+import { InvalidOutputLanguageError } from '@/domain/translate/errors/invalid-output-language.error';
+import { LanguageDetectionFailedError } from '@/domain/translate/errors/language-detection-failed.error';
+import { UnsupportedInputLanguageError } from '@/domain/translate/errors/unsupported-input-language.error';
 import { LanguageResolverHelper } from '@/translate/helpers/language-resolver.helper';
 
 describe('LanguageResolverHelper', () => {

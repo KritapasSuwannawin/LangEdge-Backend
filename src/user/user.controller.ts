@@ -2,11 +2,11 @@ import type { Request } from 'express';
 import { Body, Controller, Patch, Post, Req, UseGuards } from '@nestjs/common';
 
 import { AuthGuard } from '@/auth/auth.guard';
-import { ValidationAppError } from '@/shared/domain/errors/validation-app-error';
-import { SignInUserResponseDto } from '@/user/dto/sign-in-user-response.dto';
-import { UpdateUserDto } from '@/user/dto/update-user.dto';
-import { UpdateUserResponseDto } from '@/user/dto/update-user-response.dto';
-import { mapSignInUserResponse, mapUpdateUserResponse } from '@/user/mappers/user-response.mapper';
+import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
+import { SignInUserResponseDto } from '@/controllers/user/dto/sign-in-user-response.dto';
+import { UpdateUserDto } from '@/controllers/user/dto/update-user.dto';
+import { UpdateUserResponseDto } from '@/controllers/user/dto/update-user-response.dto';
+import { mapSignInUserResponse, mapUpdateUserResponse } from '@/controllers/user/mappers/user-response.mapper';
 import { UserService } from '@/user/user.service';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {

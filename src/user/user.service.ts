@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { User } from '@/infrastructure/database/entities/user.entity';
-import { NotFoundAppError } from '@/shared/domain/errors/not-found-app-error';
+import { NotFoundAppError } from '@/domain/shared/errors/not-found-app-error';
 import { downloadFile } from '@/shared/utils/httpUtils';
-import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import { UpdateUserDto } from '@/controllers/user/dto/update-user.dto';
 
 @Injectable()
 export class UserService {

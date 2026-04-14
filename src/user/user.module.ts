@@ -4,12 +4,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
-import { InfrastructureModule } from '../infrastructure/infrastructure.module';
-import { ENTITIES } from '../infrastructure/database/entities';
+import { User } from '@/infrastructure/database/entities/user.entity';
+import { TypeOrmUserRepository } from '@/infrastructure/database/repositories/typeorm-user.repository';
+import { HttpFileDownloadAdapter } from '@/infrastructure/http/file-download.adapter';
 
 @Module({
-  imports: [TypeOrmModule.forFeature(ENTITIES), InfrastructureModule],
+  imports: [TypeOrmModule.forFeature([User])],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [
+    UserService,
+    { provide: 'IUserRepository', useClass: TypeOrmUserRepository },
+    { provide: 'IFileDownloadPort', useClass: HttpFileDownloadAdapter },
+  ],
 })
 export class UserModule {}

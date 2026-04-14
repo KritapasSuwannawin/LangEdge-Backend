@@ -2,9 +2,9 @@ import { Request } from 'express';
 
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { NotFoundAppError } from '../shared/domain/errors/not-found-app-error';
-import { ValidationAppError } from '../shared/domain/errors/validation-app-error';
+import { UpdateUserDto } from '@/controllers/user/dto/update-user.dto';
+import { NotFoundAppError } from '@/domain/shared/errors/not-found-app-error';
+import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
 
 interface MockRequest {
   user?: Record<string, unknown>;
