@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 
-import { Language } from '../infrastructure/database/entities/language.entity';
 import { Translation } from '../infrastructure/database/entities/translation.entity';
 import { Synonym } from '../infrastructure/database/entities/synonym.entity';
 import { ExampleSentence } from '../infrastructure/database/entities/example-sentence.entity';
@@ -10,6 +9,7 @@ import { ExampleSentence } from '../infrastructure/database/entities/example-sen
 import { logError } from '../shared/utils/systemUtils';
 import { LLMService } from '../infrastructure/services/llm.service';
 import { TranslationFailedError } from '@/domain/translate/errors/translation-failed.error';
+import type { ILanguageRepository } from '@/repositories/language/i-language.repository';
 
 import { GetTranslationDto } from '@/controllers/translate/dto/get-translation.dto';
 import { TranslationResult, LanguageContext } from './types/translate.types';
@@ -21,14 +21,14 @@ export class TranslateService {
   private readonly translationCache: TranslationCacheHelper;
 
   constructor(
-    @InjectRepository(Language) private readonly languageRepo: Repository<Language>,
+    @Inject('ILanguageRepository') private readonly languageRepository: ILanguageRepository,
     @InjectRepository(Translation) private readonly translationRepo: Repository<Translation>,
     @InjectRepository(Synonym) private readonly synonymRepo: Repository<Synonym>,
     @InjectRepository(ExampleSentence) private readonly exampleSentenceRepo: Repository<ExampleSentence>,
     private readonly llmService: LLMService,
     private readonly dataSource: DataSource,
   ) {
-    this.languageResolver = new LanguageResolverHelper(this.languageRepo, this.llmService);
+    this.languageResolver = new LanguageResolverHelper(this.languageRepository, this.llmService);
     this.translationCache = new TranslationCacheHelper(this.translationRepo, this.synonymRepo, this.exampleSentenceRepo, this.dataSource);
   }
 

@@ -1,16 +1,14 @@
-import { Repository } from 'typeorm';
-
-import { Language } from '@/infrastructure/database/entities/language.entity';
 import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
 import { InvalidOutputLanguageError } from '@/domain/translate/errors/invalid-output-language.error';
 import { LanguageDetectionFailedError } from '@/domain/translate/errors/language-detection-failed.error';
 import { UnsupportedInputLanguageError } from '@/domain/translate/errors/unsupported-input-language.error';
 import { LLMService } from '@/infrastructure/services/llm.service';
+import type { ILanguageRepository } from '@/repositories/language/i-language.repository';
 import { LanguageContext } from '@/translate/types/translate.types';
 
 export class LanguageResolverHelper {
   constructor(
-    private readonly languageRepo: Repository<Language>,
+    private readonly languageRepository: ILanguageRepository,
     private readonly llmService: LLMService,
   ) {}
 
@@ -19,7 +17,7 @@ export class LanguageResolverHelper {
     outputLanguageId: number,
   ): Promise<{ languageContext: LanguageContext; isShortInputText: boolean }> {
     const [[outputLanguage], languageAndCategory] = await Promise.all([
-      this.languageRepo.find({ where: { id: outputLanguageId }, select: { name: true } }),
+      Promise.all([this.languageRepository.findById(outputLanguageId)]),
       this.llmService.determineLanguageAndCategory(text),
     ]);
 
@@ -41,10 +39,7 @@ export class LanguageResolverHelper {
     const { language: originalLanguageName, category } = languageAndCategory;
     const isShortInputText = category === 'Word' || category === 'Phrase';
 
-    const originalLanguage = await this.languageRepo.findOne({
-      where: { name: originalLanguageName },
-      select: { id: true },
-    });
+    const originalLanguage = (await this.languageRepository.findAll()).find((language) => language.name === originalLanguageName);
 
     if (!originalLanguage) {
       throw new UnsupportedInputLanguageError();

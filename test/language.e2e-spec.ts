@@ -5,11 +5,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 
-import { LanguageController } from '../src/language/language.controller';
-import { LanguageService } from '../src/language/language.service';
-
 import { Language } from '../src/infrastructure/database/entities/language.entity';
 import { ENTITIES } from '../src/infrastructure/database/entities';
+import { LanguageModule } from '@/modules/language/language.module';
 
 import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
@@ -33,9 +31,8 @@ describe('LanguageController', () => {
           }),
         }),
         TypeOrmModule.forFeature(ENTITIES),
+        LanguageModule,
       ],
-      controllers: [LanguageController],
-      providers: [LanguageService],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -107,13 +104,11 @@ describe('LanguageController', () => {
     });
 
     it('should return all languages when id is invalid string (transforms to undefined)', async () => {
-      // Create languages to verify it returns all when id is invalid
       await languageRepository.save([
         { name: 'English', code: 'en' },
         { name: 'Spanish', code: 'es' },
       ]);
 
-      // Invalid string is transformed to undefined by the DTO, so all languages are returned
       const response = await request(app.getHttpServer()).get('/language?id=invalid').expect(200);
       expect(response.body.data.languageArr).toHaveLength(2);
     });

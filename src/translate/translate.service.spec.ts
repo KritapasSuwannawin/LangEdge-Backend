@@ -2,8 +2,8 @@ import { Repository, DataSource } from 'typeorm';
 
 import { TranslateService } from './translate.service';
 import { GetTranslationDto } from '@/controllers/translate/dto/get-translation.dto';
+import type { ILanguageRepository } from '@/repositories/language/i-language.repository';
 
-import { Language } from '../infrastructure/database/entities/language.entity';
 import { Translation } from '../infrastructure/database/entities/translation.entity';
 import { Synonym } from '../infrastructure/database/entities/synonym.entity';
 import { ExampleSentence } from '../infrastructure/database/entities/example-sentence.entity';
@@ -16,7 +16,7 @@ import { UnsupportedInputLanguageError } from '@/domain/translate/errors/unsuppo
 
 describe('TranslateService', () => {
   let service: TranslateService;
-  let mockLanguageRepo: jest.Mocked<Pick<Repository<Language>, 'find' | 'findOne'>>;
+  let mockLanguageRepository: jest.Mocked<ILanguageRepository>;
   let mockTranslationRepo: jest.Mocked<Pick<Repository<Translation>, 'findOne' | 'find' | 'save' | 'create'>>;
   let mockSynonymRepo: jest.Mocked<Pick<Repository<Synonym>, 'findOne' | 'save' | 'create'>>;
   let mockExampleRepo: jest.Mocked<Pick<Repository<ExampleSentence>, 'findOne' | 'save' | 'create'>>;
@@ -26,9 +26,9 @@ describe('TranslateService', () => {
   let mockDataSource: jest.Mocked<Pick<DataSource, 'createQueryRunner'>>;
 
   beforeEach(() => {
-    mockLanguageRepo = {
-      find: jest.fn(),
-      findOne: jest.fn(),
+    mockLanguageRepository = {
+      findById: jest.fn(),
+      findAll: jest.fn(),
     };
     mockTranslationRepo = {
       findOne: jest.fn(),
@@ -66,7 +66,7 @@ describe('TranslateService', () => {
     };
 
     service = new TranslateService(
-      mockLanguageRepo as unknown as Repository<Language>,
+      mockLanguageRepository,
       mockTranslationRepo as unknown as Repository<Translation>,
       mockSynonymRepo as unknown as Repository<Synonym>,
       mockExampleRepo as unknown as Repository<ExampleSentence>,
@@ -83,7 +83,7 @@ describe('TranslateService', () => {
     const baseQuery: GetTranslationDto = { text: 'hello', outputLanguageId: 2 };
 
     it('should throw InvalidOutputLanguageError when output language is not found', async () => {
-      mockLanguageRepo.find.mockResolvedValue([]);
+      mockLanguageRepository.findById.mockResolvedValue(null);
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Word' });
       const result = service.getTranslation(baseQuery);
 
@@ -92,7 +92,7 @@ describe('TranslateService', () => {
     });
 
     it('should throw ValidationAppError when LLM returns errorMessage', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 1, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ errorMessage: 'Invalid input' });
       const result = service.getTranslation({ text: 'asdfgh', outputLanguageId: 1 });
 
@@ -104,9 +104,9 @@ describe('TranslateService', () => {
     });
 
     it('should return input text when original and output language are the same', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'English' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 1, name: 'English', code: 'en' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Word' });
-      mockLanguageRepo.findOne.mockResolvedValue({ id: 1 } as Language);
+      mockLanguageRepository.findAll.mockResolvedValue([{ id: 1, name: 'English', code: 'en' }]);
 
       const result = await service.getTranslation({ text: 'Hello', outputLanguageId: 1 });
 
@@ -115,16 +115,16 @@ describe('TranslateService', () => {
     });
 
     it('should throw UnsupportedInputLanguageError when original language is not found in database', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 2, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'Unknown', category: 'Word' });
-      mockLanguageRepo.findOne.mockResolvedValue(null);
+      mockLanguageRepository.findAll.mockResolvedValue([{ id: 2, name: 'Spanish', code: 'es' }]);
       const result = service.getTranslation(baseQuery);
 
       await expect(result).rejects.toBeInstanceOf(UnsupportedInputLanguageError);
     });
 
     it('should throw LanguageDetectionFailedError when LLM fails to determine language and category', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 2, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue(null);
       const result = service.getTranslation(baseQuery);
 
@@ -132,9 +132,12 @@ describe('TranslateService', () => {
     });
 
     it('should return cached translation when it exists', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 2, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Sentence' });
-      mockLanguageRepo.findOne.mockResolvedValue({ id: 1 } as Language);
+      mockLanguageRepository.findAll.mockResolvedValue([
+        { id: 1, name: 'English', code: 'en' },
+        { id: 2, name: 'Spanish', code: 'es' },
+      ]);
       mockTranslationRepo.findOne.mockResolvedValue({ output_text: 'Hola', id: 1 } as Translation);
 
       const result = await service.getTranslation({ text: 'Hello', outputLanguageId: 2 });
@@ -145,9 +148,12 @@ describe('TranslateService', () => {
     });
 
     it('should return cached translation with synonyms and examples for short text', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 2, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Word' });
-      mockLanguageRepo.findOne.mockResolvedValue({ id: 1 } as Language);
+      mockLanguageRepository.findAll.mockResolvedValue([
+        { id: 1, name: 'English', code: 'en' },
+        { id: 2, name: 'Spanish', code: 'es' },
+      ]);
       mockTranslationRepo.findOne.mockResolvedValue({ output_text: 'Hola', id: 1 } as Translation);
       mockSynonymRepo.findOne
         .mockResolvedValueOnce({ synonym_arr: ['Hi', 'Hey'] } as Synonym)
@@ -167,9 +173,12 @@ describe('TranslateService', () => {
     });
 
     it('should generate new translation via LLM when no cache exists', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 2, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Word' });
-      mockLanguageRepo.findOne.mockResolvedValue({ id: 1 } as Language);
+      mockLanguageRepository.findAll.mockResolvedValue([
+        { id: 1, name: 'English', code: 'en' },
+        { id: 2, name: 'Spanish', code: 'es' },
+      ]);
       mockTranslationRepo.findOne.mockResolvedValue(null);
 
       mockLLM.translateTextAndGenerateSynonyms.mockResolvedValue({ translation: 'Hola', synonyms: ['Saludo'] });
@@ -186,9 +195,12 @@ describe('TranslateService', () => {
     });
 
     it('should throw TranslationFailedError when LLM fails to translate', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 2, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Word' });
-      mockLanguageRepo.findOne.mockResolvedValue({ id: 1 } as Language);
+      mockLanguageRepository.findAll.mockResolvedValue([
+        { id: 1, name: 'English', code: 'en' },
+        { id: 2, name: 'Spanish', code: 'es' },
+      ]);
       mockTranslationRepo.findOne.mockResolvedValue(null);
       mockLLM.translateTextAndGenerateSynonyms.mockResolvedValue(null);
       mockLLM.generateSynonyms.mockResolvedValue(['Hi']);
@@ -200,9 +212,12 @@ describe('TranslateService', () => {
     });
 
     it('should not generate synonyms for long text (Sentence/Paragraph)', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'Spanish' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 2, name: 'Spanish', code: 'es' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Paragraph' });
-      mockLanguageRepo.findOne.mockResolvedValue({ id: 1 } as Language);
+      mockLanguageRepository.findAll.mockResolvedValue([
+        { id: 1, name: 'English', code: 'en' },
+        { id: 2, name: 'Spanish', code: 'es' },
+      ]);
       mockTranslationRepo.findOne.mockResolvedValue(null);
       mockLLM.translateTextAndGenerateSynonyms.mockResolvedValue({ translation: 'Translated paragraph', synonyms: [] });
       mockLLM.generateSynonyms.mockResolvedValue([]);
@@ -216,9 +231,9 @@ describe('TranslateService', () => {
     });
 
     it('should handle case-insensitive language comparison', async () => {
-      mockLanguageRepo.find.mockResolvedValue([{ name: 'english' }] as Language[]);
+      mockLanguageRepository.findById.mockResolvedValue({ id: 1, name: 'english', code: 'en' });
       mockLLM.determineLanguageAndCategory.mockResolvedValue({ language: 'English', category: 'Word' });
-      mockLanguageRepo.findOne.mockResolvedValue({ id: 1 } as Language);
+      mockLanguageRepository.findAll.mockResolvedValue([{ id: 1, name: 'English', code: 'en' }]);
 
       const result = await service.getTranslation({ text: 'Hello', outputLanguageId: 1 });
 

@@ -4,8 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 import { TranslateModule } from './translate/translate.module';
-import { LanguageModule } from './language/language.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { LanguageModule } from './modules/language/language.module';
 import { UserModule } from './modules/user/user.module';
 
 import { ENTITIES } from './infrastructure/database/entities';
