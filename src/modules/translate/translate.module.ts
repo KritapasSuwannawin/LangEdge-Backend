@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { TranslateController } from '@/controllers/translate/translate.controller';
+import { AuthGuard } from '@/modules/auth/auth.guard';
+import { AuthInfraModule } from '@/infrastructure/auth/auth-infra.module';
 import { ExampleSentence } from '@/infrastructure/database/entities/example-sentence.entity';
 import { Language } from '@/infrastructure/database/entities/language.entity';
 import { Synonym } from '@/infrastructure/database/entities/synonym.entity';
@@ -19,9 +21,10 @@ import { ResolveTranslationLanguageContext } from '@/use-cases/translate/collabo
 import { GetTranslationUseCase } from '@/use-cases/translate/get-translation.use-case';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Translation, Synonym, ExampleSentence, Language]), LLMInfraModule],
+  imports: [TypeOrmModule.forFeature([Translation, Synonym, ExampleSentence, Language]), LLMInfraModule, AuthInfraModule],
   controllers: [TranslateController],
   providers: [
+    AuthGuard,
     ResolveTranslationLanguageContext,
     GetCachedTranslationQuery,
     GenerateTranslationArtifacts,
