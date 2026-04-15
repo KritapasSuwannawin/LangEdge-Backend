@@ -35,7 +35,7 @@ LangEdge Backend provides the API services and server-side logic that powers the
 2. Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 3. Set up environment variables
@@ -50,7 +50,7 @@ FIREBASE_SERVICE_ACCOUNT={...}
 4. Start the development server:
 
 ```bash
-npm run start:dev
+pnpm start:dev
 ```
 
 ## Building for Production
