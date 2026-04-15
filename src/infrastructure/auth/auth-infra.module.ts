@@ -2,7 +2,6 @@ import { App, cert, initializeApp, ServiceAccount } from 'firebase-admin/app';
 import { Module, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { FirebaseService } from '@/infrastructure/services/firebase.service';
 import { FirebaseAuthAdapter } from './firebase-auth.adapter';
 
 const FirebaseAppProvider: Provider<App> = {
@@ -21,7 +20,7 @@ const FirebaseAppProvider: Provider<App> = {
 };
 
 @Module({
-  providers: [FirebaseAppProvider, FirebaseService, { provide: 'IAuthPort', useClass: FirebaseAuthAdapter }],
-  exports: [FirebaseService, 'IAuthPort'],
+  providers: [FirebaseAppProvider, FirebaseAuthAdapter, { provide: 'IAuthPort', useExisting: FirebaseAuthAdapter }],
+  exports: ['IAuthPort'],
 })
 export class AuthInfraModule {}

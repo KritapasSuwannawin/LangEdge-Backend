@@ -1,11 +1,12 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { FirebaseService } from '../../infrastructure/services/firebase.service';
-import { extractBearerToken } from '../../shared/utils/authUtils';
-import { Request } from 'express';
+import type { Request } from 'express';
+import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+
+import type { IAuthPort } from '@/domain/shared/ports/i-auth.port';
+import { extractBearerToken } from '@/shared/utils/authUtils';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly firebaseService: FirebaseService) {}
+  constructor(@Inject('IAuthPort') private readonly authPort: IAuthPort) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
@@ -15,7 +16,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    const decodedData = await this.firebaseService.verifyAccessToken(bearerToken);
+    const decodedData = await this.authPort.verifyToken(bearerToken);
 
     if (!decodedData) {
       throw new UnauthorizedException();

@@ -10,6 +10,6 @@ export interface LLM {
   call(
     prompt: { role: 'user' | 'system'; content: string }[],
     structure: ZodType<Record<string, unknown>>,
-    timeout: number,
+    timeout?: number,
   ): Promise<Record<string, unknown> | void>;
 }

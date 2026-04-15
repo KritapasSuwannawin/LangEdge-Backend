@@ -1,9 +1,8 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { ZodType } from 'zod';
 
+import { LLM } from '@/infrastructure/llm/models/llm.interface';
 import { logError, logWarn } from '@/shared/utils/systemUtils';
-
-import { LLM } from './llm.interface';
 
 export default class BaseOpenAI implements LLM {
   llm: ChatOpenAI;

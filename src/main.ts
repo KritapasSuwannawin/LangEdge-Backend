@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { DecodedIdToken } from 'firebase-admin/auth';
 import morgan from 'morgan';
 
+import type { DecodedToken } from '@/domain/shared/auth.types';
 import { logInfo } from '@/shared/utils/systemUtils';
 import { validationPipeConfig } from '@/infrastructure/config/validation-pipe.config';
 import { GlobalExceptionFilter } from '@/infrastructure/http/filters/global-exception.filter';
@@ -17,7 +17,7 @@ import packageJson from '../package.json';
 declare global {
   namespace Express {
     interface Request {
-      user: DecodedIdToken;
+      user: DecodedToken;
     }
   }
 }

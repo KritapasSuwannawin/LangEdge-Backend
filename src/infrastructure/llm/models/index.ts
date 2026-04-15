@@ -1,4 +1,4 @@
-import GPT4oMini from './gpt4oMini';
+import GPT4oMini from '@/infrastructure/llm/models/gpt4oMini';
 
 export const getLLM = (modelName: 'gpt-4o-mini' = 'gpt-4o-mini') => {
   switch (modelName) {

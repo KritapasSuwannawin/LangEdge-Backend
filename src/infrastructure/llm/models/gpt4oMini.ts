@@ -1,4 +1,4 @@
-import BaseOpenAI from './baseOpenAI';
+import BaseOpenAI from '@/infrastructure/llm/models/baseOpenAI';
 
 export default class GPT4oMini extends BaseOpenAI {
   constructor() {
