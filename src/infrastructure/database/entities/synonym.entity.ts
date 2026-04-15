@@ -5,18 +5,18 @@ import { Language } from './language.entity';
 @Unique(['text', 'language_id'])
 export class Synonym {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'text' })
-  text: string;
+  text!: string;
 
   @Column({ type: 'text', array: true, default: () => "'{}'" })
-  synonym_arr: string[];
+  synonym_arr!: string[];
 
   @PrimaryColumn({ type: 'int' })
-  language_id: number;
+  language_id!: number;
 
   @ManyToOne(() => Language, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'language_id' })
-  language: Language;
+  language!: Language;
 }

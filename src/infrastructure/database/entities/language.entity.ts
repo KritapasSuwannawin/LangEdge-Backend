@@ -7,11 +7,11 @@ import { Entity, PrimaryGeneratedColumn, Column, Unique, Check } from 'typeorm';
 @Check(`code ~ '^[a-z]{2}$'`)
 export class Language {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'text' })
-  name: string;
+  name!: string;
 
   @Column({ type: 'text' })
-  code: string;
+  code!: string;
 }

@@ -19,10 +19,10 @@
     },
     "incremental": true,
     "skipLibCheck": true,
+    "strict": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
+    "noImplicitAny": true,
     "noFallthroughCasesInSwitch": false
   },
   "include": ["ormconfig.ts", "src/**/*.ts", "test/**/*.ts"],

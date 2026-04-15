@@ -3,14 +3,14 @@ import { IsString, IsNotEmpty, IsEmail, IsOptional, IsInt, Min } from 'class-val
 export class SignInUserDto {
   @IsString()
   @IsNotEmpty()
-  userId: string;
+  userId!: string;
 
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()

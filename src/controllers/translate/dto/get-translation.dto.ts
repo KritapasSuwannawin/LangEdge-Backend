@@ -4,9 +4,9 @@ export class GetTranslationDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(400)
-  text: string;
+  text!: string;
 
   @IsInt()
   @Min(1)
-  outputLanguageId: number;
+  outputLanguageId!: number;
 }

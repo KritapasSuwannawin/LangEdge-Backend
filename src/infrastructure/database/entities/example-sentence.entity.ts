@@ -5,25 +5,25 @@ import { Language } from './language.entity';
 @Unique(['text', 'language_id', 'output_language_id'])
 export class ExampleSentence {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'text' })
-  text: string;
+  text!: string;
 
   @Column({ type: 'int', array: true, default: () => "'{}'" })
-  example_sentence_translation_id_arr: number[];
+  example_sentence_translation_id_arr!: number[];
 
   @PrimaryColumn({ type: 'int' })
-  language_id: number;
+  language_id!: number;
 
   @ManyToOne(() => Language, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'language_id' })
-  language: Language;
+  language!: Language;
 
   @Column({ type: 'int' })
-  output_language_id: number;
+  output_language_id!: number;
 
   @ManyToOne(() => Language, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'output_language_id' })
-  outputLanguage: Language;
+  outputLanguage!: Language;
 }
