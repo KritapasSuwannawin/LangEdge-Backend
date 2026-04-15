@@ -10,7 +10,15 @@ export default class BaseOpenAI implements LLM {
   outputCost: number;
 
   constructor(model: string, inputCost: number, outputCost: number) {
-    this.llm = new ChatOpenAI({ model, maxTokens: -1, streaming: true, cache: false });
+    this.llm = new ChatOpenAI({
+      model,
+      maxTokens: -1,
+      streaming: true,
+      cache: false,
+      reasoning: {
+        effort: 'low',
+      },
+    });
     this.inputCost = inputCost;
     this.outputCost = outputCost;
   }

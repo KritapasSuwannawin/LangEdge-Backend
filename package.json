@@ -15,6 +15,7 @@
     "test:watch": "jest --watch --maxWorkers=1",
     "test:cov": "jest --coverage --maxWorkers=1",
     "test:silent": "pnpm exec jest --maxWorkers=1 --silent",
+    "test:llm": "jest --config ./test/jest-llm.json --maxWorkers=1",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --maxWorkers=1",
     "typeorm": "typeorm-ts-node-commonjs",

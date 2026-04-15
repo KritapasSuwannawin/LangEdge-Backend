@@ -11,7 +11,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN OPENAI_API_KEY=$OPENAI_API_KEY pnpm test
+RUN pnpm test
+RUN OPENAI_API_KEY=$OPENAI_API_KEY pnpm test:llm
 RUN pnpm build
 
 RUN pnpm prune --prod

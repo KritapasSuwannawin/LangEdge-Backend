@@ -1,138 +1,147 @@
-import { INestApplication } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { ENTITIES } from '@/infrastructure/database/entities';
-import { Language } from '@/infrastructure/database/entities/language.entity';
 import { Translation } from '@/infrastructure/database/entities/translation.entity';
 
-import { TypeOrmTranslationRepository } from './typeorm-translation.repository';
+import { TypeOrmTranslationRepository } from '@/infrastructure/database/repositories/typeorm-translation.repository';
 
-describe('TypeOrmTranslationRepository (integration)', () => {
-  let app: INestApplication;
-  let dataSource: DataSource;
-  let languageRepository: Repository<Language>;
-  let translationEntityRepository: Repository<Translation>;
-  let translationRepository: TypeOrmTranslationRepository;
+interface TranslationOrmRepositoryMock {
+  findOne(options: { where: { input_text: string; input_language_id: number; output_language_id: number } }): Promise<Translation | null>;
+  find(options: { where: { id: unknown } }): Promise<Translation[]>;
+  create(entity: Partial<Translation>): Translation;
+  save(entity: Translation): Promise<Translation>;
+}
 
-  beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot(),
-        TypeOrmModule.forRootAsync({
-          imports: [ConfigModule],
-          inject: [ConfigService],
-          useFactory: (configService: ConfigService) => {
-            const databaseConnectionString = configService.get<string>('DATABASE_CONNECTION_STRING');
+describe('TypeOrmTranslationRepository', () => {
+  let repository: TypeOrmTranslationRepository;
+  let mockRepository: jest.Mocked<TranslationOrmRepositoryMock>;
 
-            if (!databaseConnectionString) {
-              throw new Error('DATABASE_CONNECTION_STRING is required for translation repository integration tests');
-            }
+  beforeEach(() => {
+    mockRepository = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+    };
 
-            return {
-              type: 'postgres' as const,
-              url: `${databaseConnectionString}-e2e`,
-              entities: ENTITIES,
-              synchronize: true,
-            };
-          },
-        }),
-        TypeOrmModule.forFeature([Language, Translation]),
-      ],
-      providers: [TypeOrmTranslationRepository],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    dataSource = app.get(DataSource);
-    languageRepository = app.get<Repository<Language>>(getRepositoryToken(Language));
-    translationEntityRepository = app.get<Repository<Translation>>(getRepositoryToken(Translation));
-    translationRepository = app.get(TypeOrmTranslationRepository);
+    repository = new TypeOrmTranslationRepository(mockRepository as unknown as Repository<Translation>);
   });
 
-  afterAll(async () => {
-    if (app) {
-      await app.close();
-    }
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  beforeEach(async () => {
-    await dataSource.synchronize(true);
+  it('should return the mapped translation when it finds one by input text and languages', async () => {
+    mockRepository.findOne.mockResolvedValue(createTranslationEntity());
+
+    const result = await repository.findByInputAndLanguages('hello', 1, 2);
+
+    expect(mockRepository.findOne).toHaveBeenCalledWith({
+      where: {
+        input_text: 'hello',
+        input_language_id: 1,
+        output_language_id: 2,
+      },
+    });
+    expect(result).toEqual({
+      id: 4,
+      inputText: 'hello',
+      inputLanguageId: 1,
+      outputText: 'hola',
+      outputLanguageId: 2,
+      createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    });
   });
 
-  it('should return translations in the requested id order', async () => {
-    const { english, spanish } = await seedLanguages(languageRepository);
-    const savedTranslations = await translationEntityRepository.save([
-      {
-        input_text: 'first',
-        input_language_id: english.id,
-        output_text: 'primero',
-        output_language_id: spanish.id,
-      },
-      {
-        input_text: 'second',
-        input_language_id: english.id,
-        output_text: 'segundo',
-        output_language_id: spanish.id,
-      },
-      {
-        input_text: 'third',
-        input_language_id: english.id,
-        output_text: 'tercero',
-        output_language_id: spanish.id,
-      },
-    ]);
+  it('should return null when no translation matches the query', async () => {
+    mockRepository.findOne.mockResolvedValue(null);
 
-    const result = await translationRepository.findByIds([savedTranslations[2].id, savedTranslations[0].id, savedTranslations[1].id]);
-
-    expect(result.map((translation) => translation.id)).toEqual([
-      savedTranslations[2].id,
-      savedTranslations[0].id,
-      savedTranslations[1].id,
-    ]);
-    expect(result.map((translation) => translation.outputText)).toEqual(['tercero', 'primero', 'segundo']);
+    await expect(repository.findByInputAndLanguages('missing', 1, 2)).resolves.toBeNull();
   });
 
-  it('should preserve duplicate ids and skip missing translations', async () => {
-    const { english, spanish } = await seedLanguages(languageRepository);
-    const savedTranslations = await translationEntityRepository.save([
+  it('should return an empty array without querying when the id list is empty', async () => {
+    const result = await repository.findByIds([]);
+
+    expect(result).toEqual([]);
+    expect(mockRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('should preserve requested order and duplicates while skipping missing ids', async () => {
+    const firstTranslation = createTranslationEntity({ id: 4, input_text: 'first', output_text: 'primero' });
+    const secondTranslation = createTranslationEntity({ id: 9, input_text: 'second', output_text: 'segundo' });
+    mockRepository.find.mockResolvedValue([firstTranslation, secondTranslation]);
+
+    const result = await repository.findByIds([9, 999, 9, 4]);
+
+    expect(mockRepository.find).toHaveBeenCalledWith({ where: { id: expect.any(Object) } });
+    expect(result).toEqual([
       {
-        input_text: 'alpha',
-        input_language_id: english.id,
-        output_text: 'alfa',
-        output_language_id: spanish.id,
+        id: 9,
+        inputText: 'second',
+        inputLanguageId: 1,
+        outputText: 'segundo',
+        outputLanguageId: 2,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
       },
       {
-        input_text: 'beta',
-        input_language_id: english.id,
-        output_text: 'beta',
-        output_language_id: spanish.id,
+        id: 9,
+        inputText: 'second',
+        inputLanguageId: 1,
+        outputText: 'segundo',
+        outputLanguageId: 2,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      },
+      {
+        id: 4,
+        inputText: 'first',
+        inputLanguageId: 1,
+        outputText: 'primero',
+        outputLanguageId: 2,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
       },
     ]);
+  });
 
-    const result = await translationRepository.findByIds([
-      savedTranslations[1].id,
-      999999,
-      savedTranslations[1].id,
-      savedTranslations[0].id,
-    ]);
+  it('should create and save a mapped translation record', async () => {
+    const createdEntity = createTranslationEntity({ id: 0 });
+    const savedEntity = createTranslationEntity();
+    mockRepository.create.mockReturnValue(createdEntity);
+    mockRepository.save.mockResolvedValue(savedEntity);
 
-    expect(result.map((translation) => translation.id)).toEqual([
-      savedTranslations[1].id,
-      savedTranslations[1].id,
-      savedTranslations[0].id,
-    ]);
+    const result = await repository.save({
+      inputText: 'hello',
+      inputLanguageId: 1,
+      outputText: 'hola',
+      outputLanguageId: 2,
+    });
+
+    expect(mockRepository.create).toHaveBeenCalledWith({
+      input_text: 'hello',
+      input_language_id: 1,
+      output_text: 'hola',
+      output_language_id: 2,
+    });
+    expect(mockRepository.save).toHaveBeenCalledWith(createdEntity);
+    expect(result).toEqual({
+      id: 4,
+      inputText: 'hello',
+      inputLanguageId: 1,
+      outputText: 'hola',
+      outputLanguageId: 2,
+      createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    });
   });
 });
 
-async function seedLanguages(languageRepository: Repository<Language>): Promise<{ english: Language; spanish: Language }> {
-  const [english, spanish] = await languageRepository.save([
-    { name: 'English', code: 'en' },
-    { name: 'Spanish', code: 'es' },
-  ]);
-
-  return { english, spanish };
+function createTranslationEntity(overrides: Partial<Translation> = {}): Translation {
+  return {
+    id: 4,
+    input_text: 'hello',
+    input_language_id: 1,
+    inputLanguage: undefined as never,
+    output_text: 'hola',
+    output_language_id: 2,
+    outputLanguage: undefined as never,
+    created_at: new Date('2024-01-01T00:00:00.000Z'),
+    ...overrides,
+  };
 }
