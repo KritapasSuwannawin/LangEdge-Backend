@@ -29,6 +29,17 @@ LangEdge Backend provides the API services and server-side logic that powers the
 - **Testing**: Jest
 - **Containerization**: Docker
 
+## Architecture
+
+This project is built using **Clean Architecture** principles to enforce a robust separation of concerns, ensuring high testability and independence from any specific framework or UI layer. The layers include:
+
+- `domain/` — Contains enterprise business rules and pure entities without any external dependencies.
+- `use-cases/` — Contains application-specific business rules, orchestrating the flow of data.
+- `repositories/` — Abstract data-access contracts required by use-cases to fetch data.
+- `controllers/` — Receives HTTP requests, calls use-cases, and handles external communication boundaries.
+- `infrastructure/` — Implements frameworks, databases, and external infrastructure (e.g., TypeORM repositories, external APIs).
+- `shared/` — Global configurations, exceptions, and utility types shared across layers.
+
 ## Installation
 
 1. Clone the repository
