@@ -2,14 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { Repository, DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
-import { TranslateController } from '../src/translate/translate.controller';
-import { TranslateService } from '../src/translate/translate.service';
+import type { ILLMPort } from '../src/domain/shared/ports/i-llm.port';
 import { AuthGuard } from '../src/modules/auth/auth.guard';
-import { LLMService } from '../src/infrastructure/services/llm.service';
+import { TranslateModule } from '../src/modules/translate/translate.module';
 
 import { Language } from '../src/infrastructure/database/entities/language.entity';
 import { Translation } from '../src/infrastructure/database/entities/translation.entity';
@@ -45,7 +44,7 @@ describe('TranslateController', () => {
     canActivate: () => true,
   };
 
-  const mockLLMService = {
+  const mockLlmPort: jest.Mocked<ILLMPort> = {
     determineLanguageAndCategory: jest.fn(),
     translateTextAndGenerateSynonyms: jest.fn(),
     generateSynonyms: jest.fn(),
@@ -66,18 +65,12 @@ describe('TranslateController', () => {
             synchronize: true,
           }),
         }),
-        TypeOrmModule.forFeature(ENTITIES),
         ThrottlerModule.forRoot([{ name: 'translate', ttl: 60000, limit: 10 }]),
-      ],
-      controllers: [TranslateController],
-      providers: [
-        TranslateService,
-        {
-          provide: LLMService,
-          useValue: mockLLMService,
-        },
+        TranslateModule,
       ],
     })
+      .overrideProvider('ILLMPort')
+      .useValue(mockLlmPort)
       .overrideGuard(AuthGuard)
       .useValue(mockAuthGuard)
       .overrideGuard(ThrottlerGuard)
@@ -113,18 +106,18 @@ describe('TranslateController', () => {
         { name: 'Spanish', code: 'es' },
       ]);
 
-      mockLLMService.determineLanguageAndCategory.mockResolvedValue({
+      mockLlmPort.determineLanguageAndCategory.mockResolvedValue({
         language: 'English',
         category: 'Word',
       });
 
-      mockLLMService.translateTextAndGenerateSynonyms.mockResolvedValue({
+      mockLlmPort.translateTextAndGenerateSynonyms.mockResolvedValue({
         translation: 'hola',
         synonyms: ['saludos', 'buenos días'],
       });
 
-      mockLLMService.generateSynonyms.mockResolvedValue(['hi', 'hey', 'greetings']);
-      mockLLMService.generateExampleSentences.mockResolvedValue([{ sentence: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' }]);
+      mockLlmPort.generateSynonyms.mockResolvedValue(['hi', 'hey', 'greetings']);
+      mockLlmPort.generateExampleSentences.mockResolvedValue([{ sentence: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' }]);
 
       const response = await request(app.getHttpServer())
         .get('/translation')
@@ -135,7 +128,7 @@ describe('TranslateController', () => {
         originalLanguageName: 'English',
         translation: 'hola',
       });
-      expect(mockLLMService.determineLanguageAndCategory).toHaveBeenCalledWith('hello');
+      expect(mockLlmPort.determineLanguageAndCategory).toHaveBeenCalledWith('hello');
     });
 
     it('should return cached translation if exists', async () => {
@@ -170,7 +163,7 @@ describe('TranslateController', () => {
         output_language_id: spanish.id,
       });
 
-      mockLLMService.determineLanguageAndCategory.mockResolvedValue({
+      mockLlmPort.determineLanguageAndCategory.mockResolvedValue({
         language: 'English',
         category: 'Word',
       });
@@ -188,13 +181,13 @@ describe('TranslateController', () => {
         exampleSentenceArr: [{ sentence: 'Hello, world!', translation: '¡Hola, mundo!' }],
       });
 
-      expect(mockLLMService.translateTextAndGenerateSynonyms).not.toHaveBeenCalled();
+      expect(mockLlmPort.translateTextAndGenerateSynonyms).not.toHaveBeenCalled();
     });
 
     it('should return same text when input and output languages are the same', async () => {
       const [english] = await languageRepository.save([{ name: 'English', code: 'en' }]);
 
-      mockLLMService.determineLanguageAndCategory.mockResolvedValue({
+      mockLlmPort.determineLanguageAndCategory.mockResolvedValue({
         language: 'English',
         category: 'Word',
       });
@@ -211,7 +204,7 @@ describe('TranslateController', () => {
     });
 
     it('should return 400 when output language does not exist', async () => {
-      mockLLMService.determineLanguageAndCategory.mockResolvedValue({
+      mockLlmPort.determineLanguageAndCategory.mockResolvedValue({
         language: 'English',
         category: 'Word',
       });
@@ -231,8 +224,8 @@ describe('TranslateController', () => {
     it('should return 400 when LLM returns error message', async () => {
       await languageRepository.save([{ name: 'Spanish', code: 'es' }]);
 
-      mockLLMService.determineLanguageAndCategory.mockResolvedValue({
-        errorMessage: 'Unable to determine language',
+      mockLlmPort.determineLanguageAndCategory.mockResolvedValue({
+        errorMessage: 'Invalid input',
       });
 
       await request(app.getHttpServer()).get('/translation').query({ text: 'asdfghjkl', outputLanguageId: 1 }).expect(400);
@@ -280,12 +273,12 @@ describe('TranslateController', () => {
         { name: 'Spanish', code: 'es' },
       ]);
 
-      mockLLMService.determineLanguageAndCategory.mockResolvedValue({
+      mockLlmPort.determineLanguageAndCategory.mockResolvedValue({
         language: 'English',
         category: 'Sentence',
       });
 
-      mockLLMService.translateTextAndGenerateSynonyms.mockResolvedValue(null);
+      mockLlmPort.translateTextAndGenerateSynonyms.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .get('/translation')
@@ -308,12 +301,12 @@ describe('TranslateController', () => {
         { name: 'Spanish', code: 'es' },
       ]);
 
-      mockLLMService.determineLanguageAndCategory.mockResolvedValue({
+      mockLlmPort.determineLanguageAndCategory.mockResolvedValue({
         language: 'English',
         category: 'Sentence',
       });
 
-      mockLLMService.translateTextAndGenerateSynonyms.mockResolvedValue({
+      mockLlmPort.translateTextAndGenerateSynonyms.mockResolvedValue({
         translation: 'Esta es una oración.',
         synonyms: [],
       });
@@ -328,8 +321,8 @@ describe('TranslateController', () => {
         translation: 'Esta es una oración.',
       });
 
-      expect(mockLLMService.generateSynonyms).not.toHaveBeenCalled();
-      expect(mockLLMService.generateExampleSentences).not.toHaveBeenCalled();
+      expect(mockLlmPort.generateSynonyms).not.toHaveBeenCalled();
+      expect(mockLlmPort.generateExampleSentences).not.toHaveBeenCalled();
     });
   });
 });

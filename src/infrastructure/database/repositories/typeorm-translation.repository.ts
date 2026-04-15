@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import { Translation } from '@/infrastructure/database/entities/translation.entity';
 import type { ITranslationRepository, SaveTranslationInput } from '@/repositories/translate/i-translation.repository';
@@ -25,6 +25,25 @@ export class TypeOrmTranslationRepository implements ITranslationRepository {
       return null;
     }
     return toTranslationRecord(entity);
+  }
+
+  async findByIds(ids: ReadonlyArray<number>): Promise<TranslationRecord[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const entities = await this.repo.find({
+      where: {
+        id: In([...ids]),
+      },
+    });
+
+    const recordById = new Map(entities.map((entity) => [entity.id, toTranslationRecord(entity)]));
+
+    return ids.flatMap((id) => {
+      const record = recordById.get(id);
+      return record ? [record] : [];
+    });
   }
 
   async save(data: SaveTranslationInput): Promise<TranslationRecord> {

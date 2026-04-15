@@ -9,5 +9,6 @@ export interface SaveTranslationInput {
 
 export interface ITranslationRepository {
   findByInputAndLanguages(inputText: string, inputLanguageId: number, outputLanguageId: number): Promise<TranslationRecord | null>;
+  findByIds(ids: ReadonlyArray<number>): Promise<TranslationRecord[]>;
   save(data: SaveTranslationInput): Promise<TranslationRecord>;
 }

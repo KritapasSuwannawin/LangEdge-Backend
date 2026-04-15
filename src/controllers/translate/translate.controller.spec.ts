@@ -1,17 +1,18 @@
-import { TranslateController } from './translate.controller';
-import { TranslateService } from './translate.service';
-import { GetTranslationDto } from '@/controllers/translate/dto/get-translation.dto';
 import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
+import { GetTranslationUseCase } from '@/use-cases/translate/get-translation.use-case';
+
+import { GetTranslationDto } from './dto/get-translation.dto';
+import { TranslateController } from './translate.controller';
 
 describe('TranslateController', () => {
   let controller: TranslateController;
-  let mockService: jest.Mocked<Pick<TranslateService, 'getTranslation'>>;
+  let mockUseCase: jest.Mocked<Pick<GetTranslationUseCase, 'execute'>>;
 
   beforeEach(() => {
-    mockService = {
-      getTranslation: jest.fn(),
+    mockUseCase = {
+      execute: jest.fn(),
     };
-    controller = new TranslateController(mockService as unknown as TranslateService);
+    controller = new TranslateController(mockUseCase as unknown as GetTranslationUseCase);
   });
 
   afterEach(() => {
@@ -29,12 +30,12 @@ describe('TranslateController', () => {
         translationSynonymArr: ['Saludo'],
         exampleSentenceArr: [{ sentence: 'Hello world', translation: 'Hola mundo' }],
       };
-      mockService.getTranslation.mockResolvedValue(mockResponse);
+      mockUseCase.execute.mockResolvedValue(mockResponse);
 
       const result = await controller.getTranslation(baseQuery);
 
-      expect(mockService.getTranslation).toHaveBeenCalledWith(baseQuery);
-      expect(mockService.getTranslation).toHaveBeenCalledTimes(1);
+      expect(mockUseCase.execute).toHaveBeenCalledWith(baseQuery);
+      expect(mockUseCase.execute).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResponse);
     });
 
@@ -43,7 +44,7 @@ describe('TranslateController', () => {
         originalLanguageName: 'English',
         translation: 'Hola',
       };
-      mockService.getTranslation.mockResolvedValue(mockResponse);
+      mockUseCase.execute.mockResolvedValue(mockResponse);
 
       const result = await controller.getTranslation(baseQuery);
 
@@ -64,7 +65,7 @@ describe('TranslateController', () => {
           { sentence: 'They eat dinner', translation: 'Ellos comen la cena' },
         ],
       };
-      mockService.getTranslation.mockResolvedValue(mockResponse);
+      mockUseCase.execute.mockResolvedValue(mockResponse);
 
       const query: GetTranslationDto = { text: 'Eat', outputLanguageId: 2 };
       const result = await controller.getTranslation(query);
@@ -78,14 +79,14 @@ describe('TranslateController', () => {
 
     it('should propagate app errors without controller translation', async () => {
       const serviceError = new ValidationAppError({ publicMessage: 'Invalid input' });
-      mockService.getTranslation.mockRejectedValue(serviceError);
+      mockUseCase.execute.mockRejectedValue(serviceError);
 
       await expect(controller.getTranslation(baseQuery)).rejects.toBe(serviceError);
     });
 
     it('should propagate unknown service errors without controller translation', async () => {
       const serviceError = new Error('Database connection failed');
-      mockService.getTranslation.mockRejectedValue(serviceError);
+      mockUseCase.execute.mockRejectedValue(serviceError);
 
       await expect(controller.getTranslation(baseQuery)).rejects.toBe(serviceError);
     });
@@ -99,11 +100,11 @@ describe('TranslateController', () => {
         originalLanguageName: 'English',
         translation: 'Este es un párrafo muy largo...',
       };
-      mockService.getTranslation.mockResolvedValue(mockResponse);
+      mockUseCase.execute.mockResolvedValue(mockResponse);
 
       const result = await controller.getTranslation(longTextQuery);
 
-      expect(mockService.getTranslation).toHaveBeenCalledWith(longTextQuery);
+      expect(mockUseCase.execute).toHaveBeenCalledWith(longTextQuery);
       expect(result.translation).toBeDefined();
     });
 
@@ -115,7 +116,7 @@ describe('TranslateController', () => {
         translationSynonymArr: [],
         exampleSentenceArr: [],
       };
-      mockService.getTranslation.mockResolvedValue(mockResponse);
+      mockUseCase.execute.mockResolvedValue(mockResponse);
 
       const result = await controller.getTranslation({ text: 'Bonjour', outputLanguageId: 1 });
 
@@ -132,7 +133,7 @@ describe('TranslateController', () => {
         translationSynonymArr: ['Grüß Gott'],
         exampleSentenceArr: [{ sentence: 'Hello friend', translation: 'Hallo Freund' }],
       };
-      mockService.getTranslation.mockResolvedValue(mockResponse);
+      mockUseCase.execute.mockResolvedValue(mockResponse);
 
       const result = await controller.getTranslation({ text: 'Hello', outputLanguageId: 4 });
 

@@ -21,6 +21,14 @@ export class TypeOrmLanguageRepository implements ILanguageRepository {
     return toLanguageRecord(entity);
   }
 
+  async findByName(name: string): Promise<LanguageRecord | null> {
+    const entity = await this.repo.findOne({ where: { name } });
+    if (!entity) {
+      return null;
+    }
+    return toLanguageRecord(entity);
+  }
+
   async findAll(): Promise<LanguageRecord[]> {
     const entities = await this.repo.find();
     return entities.map(toLanguageRecord);

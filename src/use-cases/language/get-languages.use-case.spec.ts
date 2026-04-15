@@ -21,6 +21,7 @@ describe('GetLanguagesUseCase', () => {
   beforeEach(() => {
     mockLanguageRepository = {
       findById: jest.fn(),
+      findByName: jest.fn(),
       findAll: jest.fn(),
     };
 

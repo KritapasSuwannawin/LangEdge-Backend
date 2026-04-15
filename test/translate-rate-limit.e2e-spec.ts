@@ -4,8 +4,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import request from 'supertest';
 
 import { AuthGuard } from '../src/modules/auth/auth.guard';
-import { TranslateController } from '../src/translate/translate.controller';
-import { TranslateService } from '../src/translate/translate.service';
+import { TranslateController } from '../src/controllers/translate/translate.controller';
+import { GetTranslationUseCase } from '../src/use-cases/translate/get-translation.use-case';
 
 import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 
@@ -24,8 +24,8 @@ describe('TranslateController rate limit contract', () => {
     },
   };
 
-  const mockTranslateService: jest.Mocked<Pick<TranslateService, 'getTranslation'>> = {
-    getTranslation: jest.fn(),
+  const mockGetTranslationUseCase: jest.Mocked<Pick<GetTranslationUseCase, 'execute'>> = {
+    execute: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -34,8 +34,8 @@ describe('TranslateController rate limit contract', () => {
       controllers: [TranslateController],
       providers: [
         {
-          provide: TranslateService,
-          useValue: mockTranslateService,
+          provide: GetTranslationUseCase,
+          useValue: mockGetTranslationUseCase,
         },
       ],
     })
@@ -56,7 +56,7 @@ describe('TranslateController rate limit contract', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockTranslateService.getTranslation.mockResolvedValue({
+    mockGetTranslationUseCase.execute.mockResolvedValue({
       originalLanguageName: 'English',
       translation: 'hola',
     });
@@ -77,6 +77,6 @@ describe('TranslateController rate limit contract', () => {
         message: 'Too many requests',
       },
     });
-    expect(mockTranslateService.getTranslation).toHaveBeenCalledTimes(10);
+    expect(mockGetTranslationUseCase.execute).toHaveBeenCalledTimes(10);
   });
 });
