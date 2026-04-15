@@ -44,7 +44,7 @@ describe('BaseOpenAI', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockWithStructuredOutput.mockReturnValue({ stream: mockStream });
-    baseOpenAI = new BaseOpenAI('gpt-4o-mini', 0.15, 0.6);
+    baseOpenAI = new BaseOpenAI('gpt-5.4-nano-2026-03-17', 0.15, 0.6);
   });
 
   describe('call', () => {
