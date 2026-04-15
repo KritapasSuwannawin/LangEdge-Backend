@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 
 import { User } from '@/infrastructure/database/entities/user.entity';
 
-import { TypeOrmUserRepository } from './typeorm-user.repository';
+import { TypeOrmUserRepository } from '@/infrastructure/database/repositories/typeorm-user.repository';
 
 interface UserOrmRepositoryMock {
   findOne(options: { where: { id: string } }): Promise<User | null>;

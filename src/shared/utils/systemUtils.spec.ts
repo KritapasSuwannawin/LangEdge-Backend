@@ -1,4 +1,4 @@
-import { logError, logInfo, logWarn } from './systemUtils';
+import { logError, logInfo, logWarn } from '@/shared/utils/systemUtils';
 
 describe('systemUtils', () => {
   afterEach(() => {

@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 
 import { Language } from '@/infrastructure/database/entities/language.entity';
 
-import { TypeOrmLanguageRepository } from './typeorm-language.repository';
+import { TypeOrmLanguageRepository } from '@/infrastructure/database/repositories/typeorm-language.repository';
 
 interface LanguageOrmRepositoryMock {
   findOne(options: { where: { id?: number; name?: string } }): Promise<Language | null>;

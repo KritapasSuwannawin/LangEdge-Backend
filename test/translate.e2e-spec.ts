@@ -6,15 +6,15 @@ import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { DataSource, Repository } from 'typeorm';
 
-import type { ILLMPort } from '../src/domain/shared/ports/i-llm.port';
-import { AuthGuard } from '../src/modules/auth/auth.guard';
-import { TranslateModule } from '../src/modules/translate/translate.module';
+import type { ILLMPort } from '@/domain/shared/ports/i-llm.port';
+import { AuthGuard } from '@/modules/auth/auth.guard';
+import { TranslateModule } from '@/modules/translate/translate.module';
 
-import { Language } from '../src/infrastructure/database/entities/language.entity';
-import { Translation } from '../src/infrastructure/database/entities/translation.entity';
-import { Synonym } from '../src/infrastructure/database/entities/synonym.entity';
-import { ExampleSentence } from '../src/infrastructure/database/entities/example-sentence.entity';
-import { ENTITIES } from '../src/infrastructure/database/entities';
+import { Language } from '@/infrastructure/database/entities/language.entity';
+import { Translation } from '@/infrastructure/database/entities/translation.entity';
+import { Synonym } from '@/infrastructure/database/entities/synonym.entity';
+import { ExampleSentence } from '@/infrastructure/database/entities/example-sentence.entity';
+import { ENTITIES } from '@/infrastructure/database/entities';
 
 import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 

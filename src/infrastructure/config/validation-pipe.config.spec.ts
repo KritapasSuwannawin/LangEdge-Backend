@@ -2,7 +2,7 @@ import { ValidationError } from 'class-validator';
 
 import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
 
-import { buildValidationErrorDetails, validationExceptionFactory, validationPipeConfig } from './validation-pipe.config';
+import { buildValidationErrorDetails, validationExceptionFactory, validationPipeConfig } from '@/infrastructure/config/validation-pipe.config';
 
 const createValidationError = ({
   property,

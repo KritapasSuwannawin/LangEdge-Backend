@@ -3,12 +3,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { AuthModule } from './modules/auth/auth.module';
-import { LanguageModule } from './modules/language/language.module';
-import { TranslateModule } from './modules/translate/translate.module';
-import { UserModule } from './modules/user/user.module';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { LanguageModule } from '@/modules/language/language.module';
+import { TranslateModule } from '@/modules/translate/translate.module';
+import { UserModule } from '@/modules/user/user.module';
 
-import { ENTITIES } from './infrastructure/database/entities';
+import { ENTITIES } from '@/infrastructure/database/entities';
 
 @Module({
   imports: [

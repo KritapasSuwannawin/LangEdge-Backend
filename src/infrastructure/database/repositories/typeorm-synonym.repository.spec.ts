@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 
 import { Synonym } from '@/infrastructure/database/entities/synonym.entity';
 
-import { TypeOrmSynonymRepository } from './typeorm-synonym.repository';
+import { TypeOrmSynonymRepository } from '@/infrastructure/database/repositories/typeorm-synonym.repository';
 
 interface SynonymOrmRepositoryMock {
   findOne(options: { where: { text: string; language_id: number } }): Promise<Synonym | null>;

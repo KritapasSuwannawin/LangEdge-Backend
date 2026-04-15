@@ -6,14 +6,14 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 
 import { UserController } from '@/controllers/user/user.controller';
-import { SignInUserUseCase } from '../src/use-cases/user/sign-in-user.use-case';
-import { UpdateUserUseCase } from '../src/use-cases/user/update-user.use-case';
-import { TypeOrmUserRepository } from '../src/infrastructure/database/repositories/typeorm-user.repository';
-import { AuthGuard } from '../src/modules/auth/auth.guard';
+import { SignInUserUseCase } from '@/use-cases/user/sign-in-user.use-case';
+import { UpdateUserUseCase } from '@/use-cases/user/update-user.use-case';
+import { TypeOrmUserRepository } from '@/infrastructure/database/repositories/typeorm-user.repository';
+import { AuthGuard } from '@/modules/auth/auth.guard';
 
-import { User } from '../src/infrastructure/database/entities/user.entity';
-import { Language } from '../src/infrastructure/database/entities/language.entity';
-import { ENTITIES } from '../src/infrastructure/database/entities';
+import { User } from '@/infrastructure/database/entities/user.entity';
+import { Language } from '@/infrastructure/database/entities/language.entity';
+import { ENTITIES } from '@/infrastructure/database/entities';
 
 import { applyHttpContractGlobals } from './http-contract-test-app.helper';
 

@@ -9,7 +9,7 @@ import { validationPipeConfig } from '@/infrastructure/config/validation-pipe.co
 import { GlobalExceptionFilter } from '@/infrastructure/http/filters/global-exception.filter';
 import { ResponseEnvelopeInterceptor } from '@/infrastructure/http/interceptors/response-envelope.interceptor';
 
-import { AppModule } from './app.module';
+import { AppModule } from '@/app.module';
 
 import packageJson from '../package.json';
 

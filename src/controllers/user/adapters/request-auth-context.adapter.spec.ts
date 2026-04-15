@@ -1,5 +1,5 @@
 import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
-import { extractAuthenticatedUserId, extractSignInUserAuthContext } from './request-auth-context.adapter';
+import { extractAuthenticatedUserId, extractSignInUserAuthContext } from '@/controllers/user/adapters/request-auth-context.adapter';
 
 describe('extractAuthenticatedUserId', () => {
   it('should return user_id when present', () => {

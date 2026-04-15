@@ -1,4 +1,4 @@
-import { AppErrorDetail } from './app-error-detail';
+import { AppErrorDetail } from '@/domain/shared/errors/app-error-detail';
 
 interface AppErrorOptions {
   readonly code: string;

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { IFileDownloadPort } from '@/domain/shared/ports/i-file-download.port';
 import type { IUserRepository } from '@/repositories/user/i-user.repository';
-import type { SignInUserInput, SignInUserResult } from './sign-in-user.types';
+import type { SignInUserInput, SignInUserResult } from '@/use-cases/user/sign-in-user.types';
 
 @Injectable()
 export class SignInUserUseCase {

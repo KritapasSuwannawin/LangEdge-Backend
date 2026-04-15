@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 
-import { UserController } from './user.controller';
+import { UserController } from '@/controllers/user/user.controller';
 
 import { UpdateUserDto } from '@/controllers/user/dto/update-user.dto';
 import { NotFoundAppError } from '@/domain/shared/errors/not-found-app-error';

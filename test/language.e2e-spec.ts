@@ -5,8 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 
-import { Language } from '../src/infrastructure/database/entities/language.entity';
-import { ENTITIES } from '../src/infrastructure/database/entities';
+import { Language } from '@/infrastructure/database/entities/language.entity';
+import { ENTITIES } from '@/infrastructure/database/entities';
 import { LanguageModule } from '@/modules/language/language.module';
 
 import { applyHttpContractGlobals } from './http-contract-test-app.helper';

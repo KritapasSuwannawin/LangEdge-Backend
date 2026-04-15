@@ -2,9 +2,8 @@ import { logError, logInfo } from '@/shared/utils/systemUtils';
 import { getLLM } from '@/infrastructure/llm/models';
 import type { LLM } from '@/infrastructure/llm/models/llm.interface';
 
-import { LLMAdapter } from './llm.adapter';
+import { LLMAdapter } from '@/infrastructure/llm/llm.adapter';
 
-type PromptMessage = { role: 'user' | 'system'; content: string };
 type MockLlm = {
   call: jest.MockedFunction<Pick<LLM, 'call'>['call']>;
 };

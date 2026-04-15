@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, PrimaryColumn, Column, Unique, ManyToOne, JoinColumn } from 'typeorm';
-import { Language } from './language.entity';
+import { Language } from '@/infrastructure/database/entities/language.entity';
 
 @Entity('example_sentence')
 @Unique(['text', 'language_id', 'output_language_id'])

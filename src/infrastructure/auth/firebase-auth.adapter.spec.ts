@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import type { App } from 'firebase-admin/app';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 
-import { FirebaseAuthAdapter } from './firebase-auth.adapter';
+import { FirebaseAuthAdapter } from '@/infrastructure/auth/firebase-auth.adapter';
 
 jest.mock('firebase-admin/auth', () => ({
   getAuth: jest.fn(),

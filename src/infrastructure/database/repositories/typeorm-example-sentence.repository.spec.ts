@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 
 import { ExampleSentence } from '@/infrastructure/database/entities/example-sentence.entity';
 
-import { TypeOrmExampleSentenceRepository } from './typeorm-example-sentence.repository';
+import { TypeOrmExampleSentenceRepository } from '@/infrastructure/database/repositories/typeorm-example-sentence.repository';
 
 interface ExampleSentenceOrmRepositoryMock {
   findOne(options: { where: { text: string; language_id: number; output_language_id: number } }): Promise<ExampleSentence | null>;

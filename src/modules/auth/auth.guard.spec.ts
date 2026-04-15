@@ -4,7 +4,7 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import type { DecodedToken } from '@/domain/shared/auth.types';
 import type { IAuthPort } from '@/domain/shared/ports/i-auth.port';
 
-import { AuthGuard } from './auth.guard';
+import { AuthGuard } from '@/modules/auth/auth.guard';
 
 type MockRequest = Pick<Request, 'headers'> & { user?: DecodedToken };
 

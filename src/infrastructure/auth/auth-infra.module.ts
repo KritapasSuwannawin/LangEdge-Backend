@@ -2,7 +2,7 @@ import { App, cert, initializeApp, ServiceAccount } from 'firebase-admin/app';
 import { Module, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { FirebaseAuthAdapter } from './firebase-auth.adapter';
+import { FirebaseAuthAdapter } from '@/infrastructure/auth/firebase-auth.adapter';
 
 const FirebaseAppProvider: Provider<App> = {
   provide: 'FIREBASE_APP',

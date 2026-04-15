@@ -1,5 +1,5 @@
-import { AppError } from './app-error';
-import { AppErrorDetail } from './app-error-detail';
+import { AppError } from '@/domain/shared/errors/app-error';
+import { AppErrorDetail } from '@/domain/shared/errors/app-error-detail';
 
 interface ValidationAppErrorOptions {
   readonly code?: string;

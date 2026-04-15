@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { logError, logWarn } from '@/shared/utils/systemUtils';
 
-import BaseOpenAI from './baseOpenAI';
+import BaseOpenAI from '@/infrastructure/llm/models/baseOpenAI';
 
 type LlmResponse = Record<string, unknown>;
 type PromptMessage = { role: 'user' | 'system'; content: string };

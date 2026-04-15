@@ -1,4 +1,4 @@
-import { AuthController } from './auth.controller';
+import { AuthController } from '@/controllers/auth/auth.controller';
 
 import { RefreshTokenDto } from '@/controllers/auth/dto/refresh-token.dto';
 import { RefreshTokenUseCase } from '@/use-cases/auth/refresh-token.use-case';

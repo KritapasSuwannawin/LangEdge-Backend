@@ -10,9 +10,12 @@ import { logError, logInfo } from '@/shared/utils/systemUtils';
 export class LLMAdapter implements ILLMPort {
   private readonly llm: Pick<LLM, 'call'> = getLLM();
 
-  async determineLanguageAndCategory(text: string): Promise<LanguageAndCategory | { errorMessage: 'Invalid input' } | null> {
+  async determineLanguageAndCategory(
+    text: string,
+    llm: Pick<LLM, 'call'> = this.llm,
+  ): Promise<LanguageAndCategory | { errorMessage: 'Invalid input' } | null> {
     try {
-      const llmOutput = await this.llm.call(
+      const llmOutput = await llm.call(
         [
           {
             role: 'system',
@@ -71,9 +74,10 @@ Note:
     isGenerateSynonyms: boolean,
     inputLanguage: string,
     outputLanguage: string,
+    llm: Pick<LLM, 'call'> = this.llm,
   ): Promise<{ translation: string; synonyms: string[] } | null> {
     try {
-      const llmOutput = await this.llm.call(
+      const llmOutput = await llm.call(
         [
           {
             role: 'system',
@@ -125,9 +129,9 @@ Output format: ${isGenerateSynonyms ? '{ "translation": "...", "synonyms": [ ...
     }
   }
 
-  async generateSynonyms(text: string, language: string): Promise<string[] | null> {
+  async generateSynonyms(text: string, language: string, llm: Pick<LLM, 'call'> = this.llm): Promise<string[] | null> {
     try {
-      const llmOutput = await this.llm.call(
+      const llmOutput = await llm.call(
         [
           {
             role: 'system',
@@ -182,9 +186,10 @@ Output requirements:
     text: string,
     inputLanguage: string,
     translationLanguage: string,
+    llm: Pick<LLM, 'call'> = this.llm,
   ): Promise<Array<{ sentence: string; translation: string }> | null> {
     try {
-      const llmOutput = await this.llm.call(
+      const llmOutput = await llm.call(
         [
           {
             role: 'system',

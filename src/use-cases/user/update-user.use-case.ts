@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { NotFoundAppError } from '@/domain/shared/errors/not-found-app-error';
 import type { IUserRepository } from '@/repositories/user/i-user.repository';
-import type { UpdateUserInput } from './update-user.types';
+import type { UpdateUserInput } from '@/use-cases/user/update-user.types';
 
 @Injectable()
 export class UpdateUserUseCase {

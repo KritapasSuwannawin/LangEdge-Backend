@@ -1,8 +1,8 @@
 import { ValidationAppError } from '@/domain/shared/errors/validation-app-error';
 import { GetTranslationUseCase } from '@/use-cases/translate/get-translation.use-case';
 
-import { GetTranslationDto } from './dto/get-translation.dto';
-import { TranslateController } from './translate.controller';
+import { GetTranslationDto } from '@/controllers/translate/dto/get-translation.dto';
+import { TranslateController } from '@/controllers/translate/translate.controller';
 
 describe('TranslateController', () => {
   let controller: TranslateController;

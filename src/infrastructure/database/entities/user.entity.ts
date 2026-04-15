@@ -1,5 +1,5 @@
 import { Entity, PrimaryColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Language } from './language.entity';
+import { Language } from '@/infrastructure/database/entities/language.entity';
 
 @Entity('user')
 export class User {
